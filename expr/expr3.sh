@@ -1,0 +1,15 @@
+python train.py \
+    --gpu_ids=2,3 \
+    --dataroot=/mnt/data/yxchen/rss-datasets/expr2.1/train \
+    --name=rss_expr2.1 \
+    --model=rssmap2rssmap \
+    --input_nc=1 \
+    --output_nc=1 \
+    --norm=instance \
+    --dataset_mode=rss \
+    --num_threads=4 \
+    --batch_size=32 \
+    --gan_mode=vanilla \
+    --netG=unet_64 \
+    --lambda_L1=0 \
+    --display_env=expr2.1

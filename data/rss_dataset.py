@@ -14,6 +14,7 @@ You need to implement the following functions:
 from data.base_dataset import BaseDataset, get_transform
 # from data.image_folder import make_dataset
 # from PIL import Image
+import random
 import pickle
 import torch
 import glob
@@ -55,8 +56,13 @@ class RSSDataset(BaseDataset):
         self.dir = opt.dataroot
 
         # get the image paths of your dataset;
-        self.image_paths = glob.glob(os.path.join(self.dir, "*.pickle"))  # You can call sorted(make_dataset(self.root, opt.max_dataset_size)) to get all the image paths under the directory self.root
-        self.image_paths = sorted(self.image_paths)
+        self.A_paths = glob.glob(os.path.join(self.dir, "A/*.pickle"))  # You can call sorted(make_dataset(self.root, opt.max_dataset_size)) to get all the image paths under the directory self.root
+        self.A_paths = sorted(self.A_paths)
+        self.B_paths = glob.glob(os.path.join(self.dir, "B/*.pickle")) 
+        self.B_paths = sorted(self.B_paths)
+
+        self.A_size = len(self.A_paths)
+        self.B_size = len(self.B_paths)
 
         self.min_rss = -85
         self.max_rss = 30
@@ -78,18 +84,28 @@ class RSSDataset(BaseDataset):
         Step 3: convert your data to a PyTorch tensor. You can use helpder functions such as self.transform. e.g., data = self.transform(image)
         Step 4: return a data point as a dictionary.
         """
-        path = self.image_paths[index]
-        with open(path, 'rb') as f:
+        A_path = self.A_paths[index]
+        with open(A_path, 'rb') as f:
             data_A = pickle.load(f)
         
-        data_A = self.normalize_data(data_A)
-        data_A = torch.tensor(data_A, dtype=torch.float32)
-        data_A = data_A[18:18+64, 18:18+64]
-        data_A = data_A.view((1, data_A.size()[0], -1))
-        data_B = data_A
+        # randomly pick a rss map as B
+        indexB = random.randint(0, self.B_size-1)
+        B_path = self.B_paths[indexB]
+        with open(B_path, 'rb') as f:
+            data_B = pickle.load(f)
 
-        return {'A': data_A, 'B': data_B, 'A_paths': path, 'B_paths': path}
+        def _transform(data_A):
+            data_A = self.normalize_data(data_A)
+            data_A = torch.tensor(data_A, dtype=torch.float32)
+            data_A = data_A[18:18+64, 18:18+64]
+            data_A = data_A.view((1, data_A.size()[0], -1))
+            return data_A
+
+        data_A = _transform(data_A)
+        data_B = _transform(data_B)
+
+        return {'A': data_A, 'B': data_B, 'A_paths': A_path, 'B_paths': B_path}
 
     def __len__(self):
         """Return the total number of images."""
-        return len(self.image_paths)
+        return self.A_size

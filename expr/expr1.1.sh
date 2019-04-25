@@ -1,0 +1,14 @@
+python train.py \
+    --gpu_ids=0 \
+    --dataroot=/mnt/data/yanzi/synthetic_data1_img_gamma_2.0 \
+    --name=rss_initial_vanilla \
+    --model=pix2pix \
+    --input_nc=1 \
+    --output_nc=1 \
+    --norm=instance \
+    --dataset_mode=rss \
+    --num_threads=4 \
+    --batch_size=4 \
+    --gan_mode=vanilla \
+    --netG=unet_64 \
+    --display_env=main2
