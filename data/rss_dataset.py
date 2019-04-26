@@ -56,9 +56,9 @@ class RSSDataset(BaseDataset):
         self.dir = opt.dataroot
 
         # get the image paths of your dataset;
-        self.A_paths = glob.glob(os.path.join(self.dir, "A/*.pickle"))  # You can call sorted(make_dataset(self.root, opt.max_dataset_size)) to get all the image paths under the directory self.root
+        self.A_paths = self.make_dataset(os.path.join(self.dir, "A"))
         self.A_paths = sorted(self.A_paths)
-        self.B_paths = glob.glob(os.path.join(self.dir, "B/*.pickle")) 
+        self.B_paths = self.make_dataset(os.path.join(self.dir, "B"))
         self.B_paths = sorted(self.B_paths)
 
         self.A_size = len(self.A_paths)
@@ -67,8 +67,35 @@ class RSSDataset(BaseDataset):
         self.min_rss = -85
         self.max_rss = 30
     
+    def is_image_file(self, filename):
+        IMG_EXTENSIONS = ['.pickle']
+        return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
+
+    def make_dataset(self, dir, max_dataset_size=float("inf")):
+        images = []
+        if not os.path.isdir(dir):
+            print('%s is not a valid directory' % dir)
+            return []
+
+        for root, dirs, fnames in sorted(os.walk(dir)):
+            for d in dirs:
+                images += self.make_dataset(os.path.join(root, d))
+
+            for fname in fnames:
+                if self.is_image_file(fname):
+                    path = os.path.join(root, fname)
+                    images.append(path)
+        return images[:min(max_dataset_size, len(images))]
+
     def normalize_data(self, data):
         return (data - self.min_rss) / (self.max_rss - self.min_rss) * 2 - 1
+
+    def transform(self, data_A):
+        data_A = self.normalize_data(data_A)
+        data_A = torch.tensor(data_A, dtype=torch.float32)
+        data_A = data_A[18:18+64, 18:18+64]
+        data_A = data_A.view((1, data_A.size()[0], -1))
+        return data_A
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
@@ -94,15 +121,8 @@ class RSSDataset(BaseDataset):
         with open(B_path, 'rb') as f:
             data_B = pickle.load(f)
 
-        def _transform(data_A):
-            data_A = self.normalize_data(data_A)
-            data_A = torch.tensor(data_A, dtype=torch.float32)
-            data_A = data_A[18:18+64, 18:18+64]
-            data_A = data_A.view((1, data_A.size()[0], -1))
-            return data_A
-
-        data_A = _transform(data_A)
-        data_B = _transform(data_B)
+        data_A = self.transform(data_A)
+        data_B = self.transform(data_B)
 
         return {'A': data_A, 'B': data_B, 'A_paths': A_path, 'B_paths': B_path}
 

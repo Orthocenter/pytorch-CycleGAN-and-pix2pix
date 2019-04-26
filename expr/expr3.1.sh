@@ -1,7 +1,7 @@
 python train.py \
-    --gpu_ids=3 \
+    --gpu_ids=2 \
     --dataroot=/mnt/data/yxchen/rss-datasets/expr3/train \
-    --name=rss_expr3 \
+    --name=rss_expr3.1 \
     --model=cycle_gan \
     --input_nc=1 \
     --output_nc=1 \
@@ -9,9 +9,7 @@ python train.py \
     --dataset_mode=rss \
     --num_threads=4 \
     --batch_size=16 \
-    --gan_mode=vanilla \
+    --gan_mode=lsgan \
     --netG=unet_64 \
-    --display_env=expr3 \
-    --continue_train \
-    --epoch=15 \
-    --epoch_count=16
+    --lambda_identity=0 \
+    --display_env=expr3.1 \
