@@ -101,7 +101,7 @@ class Visualizer():
         print('Command: %s' % cmd)
         Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 
-    def display_current_results(self, visuals, epoch, save_result):
+    def display_current_results(self, visuals, epoch, save_result, text={}):
         """Display current results on visdom; save current results to an HTML file.
 
         Parameters:
@@ -139,12 +139,20 @@ class Visualizer():
                     idx += 1
                 if label_html_row != '':
                     label_html += '<tr>%s</tr>' % label_html_row
+                
+                text_string = ""
+                for label, text in text.items():
+                    text_string += "%s: %s<br>" % (label, text)
+
                 try:
                     self.vis.images(images, nrow=ncols, win=self.display_id + 1,
                                     padding=2, opts=dict(title=title + ' images'))
                     label_html = '<table>%s</table>' % label_html
                     self.vis.text(table_css + label_html, win=self.display_id + 2,
                                   opts=dict(title=title + ' labels'))
+
+                    self.vis.text(text_string, win=self.display_id+3, opts=dict(title=title + ' data'))
+
                 except VisdomExceptionBase:
                     self.create_visdom_connections()
 

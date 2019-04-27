@@ -19,7 +19,8 @@ import pickle
 import torch
 import glob
 import os
-
+import re
+import numpy as np
 
 class RSSDataset(BaseDataset):
     """RSS Dataset, synthetic data"""
@@ -97,6 +98,14 @@ class RSSDataset(BaseDataset):
         data_A = data_A.view((1, data_A.size()[0], -1))
         return data_A
 
+    def normalize_loc(self, loc):
+        return loc / 5.
+
+    def get_loc_from_path(self, path):
+        loc = path.split('/')[-1].split('_')[1:3]
+        loc = np.array([float(x) for x in loc])
+        return self.normalize_loc(loc)
+
     def __getitem__(self, index):
         """Return a data point and its metadata information.
 
@@ -124,7 +133,10 @@ class RSSDataset(BaseDataset):
         data_A = self.transform(data_A)
         data_B = self.transform(data_B)
 
-        return {'A': data_A, 'B': data_B, 'A_paths': A_path, 'B_paths': B_path}
+        tx_loc = torch.tensor(self.get_loc_from_path(A_path)).float()
+
+        return {'A': data_A, 'B': data_B, 'A_paths': A_path, 'B_paths': B_path,
+                'tx_loc': tx_loc}
 
     def __len__(self):
         """Return the total number of images."""

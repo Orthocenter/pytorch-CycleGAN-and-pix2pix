@@ -609,3 +609,51 @@ class PixelDiscriminator(nn.Module):
     def forward(self, input):
         """Standard forward."""
         return self.net(input)
+
+class TaskNetwork(nn.Module):
+    """Defines a task network that predicts the location of the tx
+    """
+
+    def __init__(self, input_nc = 1, ndf=32, norm_layer=nn.InstanceNorm2d):
+        super(TaskNetwork, self).__init__()
+    
+        self.net = []
+
+        def block(input_nc, output_nc, norm=True):
+            if norm:
+                return [nn.Conv2d(input_nc, output_nc, kernel_size=4,
+                            stride=2, padding=1, bias=False),
+                    nn.LeakyReLU(0.2, True), norm_layer(output_nc)]
+            else:
+                return [nn.Conv2d(input_nc, output_nc, kernel_size=4,
+                            stride=2, padding=1, bias=False), nn.LeakyReLU(0.2, True)]
+
+        self.net += block(input_nc, ndf)
+        last_ndf = ndf
+        for i in range(1, 5): # 64 pixels
+            new_ndf = min(last_ndf * 2, 64)
+            self.net += block(last_ndf, new_ndf)
+            last_ndf = new_ndf
+        
+        new_ndf = min(last_ndf * 2, 64)
+        self.net += block(last_ndf, new_ndf, False)
+        last_ndf = new_ndf
+        
+        self.net = nn.Sequential(*self.net)
+
+        self.nf = last_ndf
+        self.linear1 = nn.Linear(last_ndf, last_ndf//2)
+        self.linear2 = nn.Linear(last_ndf//2, ndf)
+        self.linear3 = nn.Linear(ndf, 2)
+    
+    def forward(self, input):
+        x = self.net(input)
+        x = x.view((-1, self.nf))
+        x = self.linear1(x)
+        x = self.linear2(x)
+        return self.linear3(x)
+
+def define_T(init_type='normal', init_gain=0.02, gpu_ids=[]):
+    net = TaskNetwork()
+
+    return init_net(net, init_type, init_gain, gpu_ids)

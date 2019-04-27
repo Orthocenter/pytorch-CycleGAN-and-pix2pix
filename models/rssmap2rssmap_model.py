@@ -44,17 +44,21 @@ class RssMap2RssMapModel(BaseModel):
         """
         BaseModel.__init__(self, opt)
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
-        self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake']
+        self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake', 'T_B']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real_A', 'fake_B', 'real_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
+        self.text_names = ['tx_loc', 'task_B']
+
         if self.isTrain:
-            self.model_names = ['G', 'D']
+            self.model_names = ['G', 'D', 'T']
         else:  # during test time, only load G
-            self.model_names = ['G']
+            self.model_names = ['G', 'T']
         # define networks (both generator and discriminator)
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                       not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+
+        self.netT = networks.define_T(init_type=opt.init_type, init_gain=opt.init_gain, gpu_ids=opt.gpu_ids)
 
         if self.isTrain:  # define a discriminator; only single channel input here 
             assert(opt.input_nc == opt.output_nc)
@@ -65,11 +69,14 @@ class RssMap2RssMapModel(BaseModel):
             # define loss functions
             self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)
             self.criterionL1 = torch.nn.L1Loss()
+            self.criterionT = torch.nn.SmoothL1Loss()
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
             self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_T = torch.optim.Adam(self.netT.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999)) 
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
+            self.optimizers.append(self.optimizer_T)
 
     def set_input(self, input):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
@@ -83,6 +90,7 @@ class RssMap2RssMapModel(BaseModel):
         self.real_A = input['A' if AtoB else 'B'].to(self.device)
         self.real_B = input['B' if AtoB else 'A'].to(self.device)
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
+        self.tx_loc = input['tx_loc'].to(self.device)
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
@@ -114,6 +122,19 @@ class RssMap2RssMapModel(BaseModel):
         self.loss_G = self.loss_G_GAN + self.loss_G_L1
         self.loss_G.backward()
 
+    def backward_T(self):
+        """Calculate TaskNetwork loss"""
+        self.task_B = task_B = self.netT(self.fake_B) # T(G(A))
+        self.loss_T_B = self.criterionT(task_B, self.tx_loc)
+        self.loss_T_B *= 100
+        self.loss_T_B.backward(retain_graph=True)
+
+        # self.task_A = task_A = self.netT(self.real_A) # T(A)
+        # self.loss_T_A = self.criterionT(task_A, self.tx_loc)
+        # self.loss_T_A *= 10
+        # self.loss_T_A.backward()
+
+
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
         # update D
@@ -121,8 +142,17 @@ class RssMap2RssMapModel(BaseModel):
         self.optimizer_D.zero_grad()     # set D's gradients to zero
         self.backward_D()                # calculate gradients for D
         self.optimizer_D.step()          # update D's weights
+
+        # update T
+        self.set_requires_grad(self.netT, True)  # D requires no gradients when optimizing T
+        self.optimizer_T.zero_grad()        # set T's gradients to zero
+        self.optimizer_G.zero_grad()        # set G's gradients to zero
+        self.backward_T()                   # calculate graidents for T
+        self.optimizer_T.step()             # udpate T's weights
+
         # update G
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
-        self.optimizer_G.zero_grad()        # set G's gradients to zero
+        self.set_requires_grad(self.netT, False)  # T requires no gradients when optimizing G
         self.backward_G()                   # calculate graidents for G
         self.optimizer_G.step()             # udpate G's weights
+

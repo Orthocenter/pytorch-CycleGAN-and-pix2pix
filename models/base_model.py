@@ -39,6 +39,7 @@ class BaseModel(ABC):
         self.loss_names = []
         self.model_names = []
         self.visual_names = []
+        self.text_names = []
         self.optimizers = []
         self.image_paths = []
         self.metric = 0  # used for learning rate policy 'plateau'
@@ -131,6 +132,13 @@ class BaseModel(ABC):
             if isinstance(name, str):
                 visual_ret[name] = getattr(self, name)
         return visual_ret
+    
+    def get_current_text(self):
+        ret = OrderedDict()
+        for name in self.text_names:
+            if isinstance(name, str):
+                ret[name] = str(getattr(self, name))
+        return ret
 
     def get_current_losses(self):
         """Return traning losses / errors. train.py will print out these errors on console, and save them to a file"""
