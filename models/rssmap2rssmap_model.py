@@ -44,11 +44,11 @@ class RssMap2RssMapModel(BaseModel):
         """
         BaseModel.__init__(self, opt)
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
-        self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake', 'T_B']
+        self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake', 'T_A', 'T_B']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real_A', 'fake_B', 'real_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
-        self.text_names = ['tx_loc', 'task_B']
+        self.text_names = ['tx_loc', 'task_A', 'task_B']
 
         if self.isTrain:
             self.model_names = ['G', 'D', 'T']
@@ -124,15 +124,19 @@ class RssMap2RssMapModel(BaseModel):
 
     def backward_T(self):
         """Calculate TaskNetwork loss"""
+        self.optimizer_T.zero_grad()        # set T's gradients to zero
+        self.task_A = task_A = self.netT(self.real_A) # T(A)
+        self.loss_T_A = self.criterionT(task_A, self.tx_loc)
+        self.loss_T_A *= 100
+        self.loss_T_A.backward()
+        self.optimizer_T.step()             # udpate T's weights
+
+        self.optimizer_T.zero_grad()        # set T's gradients to zero
         self.task_B = task_B = self.netT(self.fake_B) # T(G(A))
         self.loss_T_B = self.criterionT(task_B, self.tx_loc)
         self.loss_T_B *= 100
         self.loss_T_B.backward(retain_graph=True)
-
-        # self.task_A = task_A = self.netT(self.real_A) # T(A)
-        # self.loss_T_A = self.criterionT(task_A, self.tx_loc)
-        # self.loss_T_A *= 10
-        # self.loss_T_A.backward()
+        self.optimizer_T.step()             # udpate T's weights
 
 
     def optimize_parameters(self):
@@ -145,10 +149,8 @@ class RssMap2RssMapModel(BaseModel):
 
         # update T
         self.set_requires_grad(self.netT, True)  # D requires no gradients when optimizing T
-        self.optimizer_T.zero_grad()        # set T's gradients to zero
         self.optimizer_G.zero_grad()        # set G's gradients to zero
         self.backward_T()                   # calculate graidents for T
-        self.optimizer_T.step()             # udpate T's weights
 
         # update G
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
