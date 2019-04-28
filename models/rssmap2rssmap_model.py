@@ -49,7 +49,7 @@ class RssMap2RssMapModel(BaseModel):
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real_A', 'fake_B', 'real_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
-        self.text_names = ['tx_loc', 'task_A', 'task_B']
+        self.text_names = ['tx_loc_pwr', 'task_A', 'task_B']
 
         if self.isTrain:
             self.model_names = ['G', 'D', 'T']
@@ -91,7 +91,7 @@ class RssMap2RssMapModel(BaseModel):
         self.real_A = input['A' if AtoB else 'B'].to(self.device)
         self.real_B = input['B' if AtoB else 'A'].to(self.device)
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
-        self.tx_loc = input['tx_loc'].to(self.device)
+        self.tx_loc_pwr = input['tx_loc_pwr'].to(self.device)
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
@@ -129,13 +129,13 @@ class RssMap2RssMapModel(BaseModel):
         """Calculate TaskNetwork loss"""
         self.optimizer_T.zero_grad()        # set T's gradients to zero
         self.task_A = task_A = self.netT(self.real_A) # T(A)
-        self.loss_T_A = self.criterionT(task_A, self.tx_loc)
+        self.loss_T_A = self.criterionT(task_A, self.tx_loc_pwr)
         self.loss_T_A.backward(retain_graph=True)
         self.optimizer_T.step()             # udpate T's weights
 
         self.optimizer_T.zero_grad()        # set T's gradients to zero
         self.task_B = task_B = self.netT(self.fake_B) # T(G(A))
-        self.loss_T_B = self.criterionT(task_B, self.tx_loc)
+        self.loss_T_B = self.criterionT(task_B, self.tx_loc_pwr)
         self.loss_T_B *= self.opt.lambda_T
         self.loss_T_B.backward(retain_graph=True)
 

@@ -656,13 +656,23 @@ class TaskNetwork(nn.Module):
         self.linear1 = nn.Linear(last_ndf, last_ndf//2)
         self.linear2 = nn.Linear(last_ndf//2, ndf)
         self.linear3 = nn.Linear(ndf, 2)
+
+        self.linear_pwr1 = nn.Linear(last_ndf, last_ndf//2)
+        self.linear_pwr2 = nn.Linear(last_ndf//2, ndf)
+        self.linear_pwr3 = nn.Linear(ndf, 1)
     
     def forward(self, input):
         x = self.net(input)
         x = x.view((-1, self.nf))
-        x = self.linear1(x)
-        x = self.linear2(x)
-        return self.linear3(x)
+        x1 = self.linear1(x)
+        x1 = self.linear2(x1)
+        x1 = self.linear3(x1)
+
+        x2 = self.linear_pwr1(x)
+        x2 = self.linear_pwr2(x2)
+        x2 = self.linear_pwr3(x2)
+        
+        return torch.cat((x1, x2), 1)
 
 def define_T(init_type='normal', init_gain=0.02, gpu_ids=[]):
     net = TaskNetwork()

@@ -112,6 +112,12 @@ class RSSDataset(BaseDataset):
         loc = path.split('/')[-1].split('_')[1:3]
         loc = np.array([float(x) for x in loc])
         return self.normalize_loc(loc)
+    
+    def get_pwr_from_path(self, path):
+        pwr = np.array(
+            [float(path.split('/')[-1].split('_')[-1].split('.')[0])]
+            )
+        return self.normalize_data(pwr)
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
@@ -141,9 +147,12 @@ class RSSDataset(BaseDataset):
         data_B = self.transform(data_B)
 
         tx_loc = torch.tensor(self.get_loc_from_path(A_path)).float()
+        tx_pwr = torch.tensor(self.get_pwr_from_path(A_path)).float()
+
+        tx_loc_pwr = torch.cat((tx_loc, tx_pwr))
 
         return {'A': data_A, 'B': data_B, 'A_paths': A_path, 'B_paths': B_path,
-                'tx_loc': tx_loc}
+                'tx_loc_pwr': tx_loc_pwr}
 
     def __len__(self):
         """Return the total number of images."""
