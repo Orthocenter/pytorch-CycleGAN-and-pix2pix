@@ -24,8 +24,16 @@ from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
 
+import torch
+import numpy as np
+
+
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
+    
+    torch.manual_seed(opt.seed)
+    np.random.seed(opt.seed)
+
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     dataset_size = len(dataset)    # get the number of images in the dataset.
     print('The number of training images = %d' % dataset_size)
