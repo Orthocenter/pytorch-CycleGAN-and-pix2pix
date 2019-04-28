@@ -9,7 +9,7 @@ python train.py \
     --norm=batch \
     --dataset_mode=rss \
     --num_threads=12 \
-    --batch_size=128 \
+    --batch_size=64 \
     --gan_mode=square \
     --netG=unet_64 \
     --lambda_L1=0 \
