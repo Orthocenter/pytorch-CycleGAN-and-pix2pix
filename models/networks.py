@@ -229,6 +229,7 @@ class GANLoss(nn.Module):
             self.loss = nn.BCEWithLogitsLoss()
         elif gan_mode == 'square':
             self.loss = None
+            self.sigmoid = torch.nn.Sigmoid()
         elif gan_mode in ['wgangp']:
             self.loss = None
         else:
@@ -270,6 +271,7 @@ class GANLoss(nn.Module):
             else:
                 loss = prediction.mean()
         elif self.gan_mode == 'square':
+            prediction = self.sigmoid(prediction)
             if target_is_real:
                 loss = (prediction - 1) ** 2
                 loss = loss.mean()

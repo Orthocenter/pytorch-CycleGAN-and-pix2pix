@@ -96,6 +96,8 @@ class RssMap2RssMapModel(BaseModel):
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         self.fake_B = self.netG(self.real_A)  # G(A)
+        self.task_A = self.netT(self.real_A) # T(A)
+        self.task_B = self.netT(self.fake_B) # T(G(A))
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -128,8 +130,7 @@ class RssMap2RssMapModel(BaseModel):
         self.optimizer_T.zero_grad()        # set T's gradients to zero
         self.task_A = task_A = self.netT(self.real_A) # T(A)
         self.loss_T_A = self.criterionT(task_A, self.tx_loc)
-        self.loss_T_A.backward()
-        self.optimizer_T.step()             # udpate T's weights
+        self.loss_T_A.backward(retain_graph=True)
 
         self.optimizer_T.zero_grad()        # set T's gradients to zero
         self.task_B = task_B = self.netT(self.fake_B) # T(G(A))
@@ -149,6 +150,7 @@ class RssMap2RssMapModel(BaseModel):
         self.set_requires_grad(self.netT, True)  # D requires no gradients when optimizing T
         self.optimizer_G.zero_grad()        # set G's gradients to zero
         self.backward_T()                   # calculate graidents for T
+        self.optimizer_T.step()             # udpate T's weights
 
         # update G
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
