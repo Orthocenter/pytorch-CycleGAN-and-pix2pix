@@ -85,6 +85,13 @@ class RSSDataset(BaseDataset):
             for fname in fnames:
                 if self.is_image_file(fname):
                     path = os.path.join(root, fname)
+                    loc = path.split('/')[-1].split('_')[1:3]
+                    loc = np.array([float(x) for x in loc])
+                    x = float(loc[0])
+                    y = float(loc[1])
+                    if x < -3.2 or y < -3.2 or x > 3.2 or y > 3.2:
+                        continue
+
                     images.append(path)
         return images[:min(max_dataset_size, len(images))]
 
