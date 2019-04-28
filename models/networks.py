@@ -227,6 +227,8 @@ class GANLoss(nn.Module):
             self.loss = nn.MSELoss()
         elif gan_mode == 'vanilla':
             self.loss = nn.BCEWithLogitsLoss()
+        elif gan_mode == 'square':
+            self.loss = None
         elif gan_mode in ['wgangp']:
             self.loss = None
         else:
@@ -267,6 +269,13 @@ class GANLoss(nn.Module):
                 loss = -prediction.mean()
             else:
                 loss = prediction.mean()
+        elif self.gan_mode == 'square':
+            if target_is_real:
+                loss = (prediction - 1) ** 2
+                loss = loss.mean()
+            else:
+                loss = prediction ** 2
+                loss = loss.mean()
         return loss
 
 
