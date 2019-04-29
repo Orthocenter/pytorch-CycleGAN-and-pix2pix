@@ -96,8 +96,9 @@ class RssMap2RssMapModel(BaseModel):
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         self.fake_B = self.netG(self.real_A)  # G(A)
-        self.task_A = self.netT(self.real_A) # T(A)
-        self.task_B = self.netT(self.fake_B) # T(G(A))
+        if not self.opt.isTrain: # this is for testing only; during training, we will get
+            self.task_A = self.netT(self.real_A) # T(A)
+            self.task_B = self.netT(self.fake_B) # T(G(A))
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -138,6 +139,7 @@ class RssMap2RssMapModel(BaseModel):
         self.loss_T_B = self.criterionT(task_B, self.tx_loc_pwr)
         self.loss_T_B *= self.opt.lambda_T
         self.loss_T_B.backward(retain_graph=True)
+        self.optimizer_T.step()
 
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
