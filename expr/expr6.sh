@@ -1,6 +1,6 @@
 python train.py \
     --seed=666 \
-    --gpu_ids=3 \
+    --gpu_ids=1 \
     --dataroot=/mnt/data/yxchen/rss-datasets/expr5/train \
     --name=rss_expr6 \
     --model=rssmap2rssmap \
