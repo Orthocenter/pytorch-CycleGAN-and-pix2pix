@@ -63,7 +63,9 @@ class RSSDataset(BaseDataset):
         self.B_paths = sorted(self.B_paths)
 
         self.A_size = len(self.A_paths)
+        print("A size: ", self.A_size)
         self.B_size = len(self.B_paths)
+        print("B size: ", self.B_size)
 
         self.min_rss = -85
         self.max_rss = 30
