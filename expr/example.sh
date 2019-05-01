@@ -17,4 +17,5 @@ python train.py \
     --display_env=expr8.1 \
     --n_iter=100 \
     --n_iter_decay=100 \
+    --max_B_size=20 \
     --verbose
