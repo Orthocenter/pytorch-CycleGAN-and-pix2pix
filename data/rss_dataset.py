@@ -61,7 +61,6 @@ class RSSDataset(BaseDataset):
         self.A_paths = sorted(self.A_paths)
         self.B_paths = self.make_dataset(os.path.join(self.dir, "B"))
         random.shuffle(self.B_paths)
-        print(opt.max_B_size)
         self.B_paths = self.B_paths[:min(opt.max_B_size, len(self.B_paths))]
 
         self.A_size = len(self.A_paths)
