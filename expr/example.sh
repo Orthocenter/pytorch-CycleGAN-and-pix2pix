@@ -15,7 +15,8 @@ python train.py \
     --lambda_L1=0 \
     --lambda_T=1 \
     --display_env=expr8.1 \
-    --n_iter=100 \
-    --n_iter_decay=100 \
+    --niter=100 \
+    --niter_decay=100 \
     --max_B_size=20 \
+    --lr=0.0001 \
     --verbose
