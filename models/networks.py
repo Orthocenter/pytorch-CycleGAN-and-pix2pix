@@ -760,8 +760,13 @@ class TaskNetwork(nn.Module):
         self.linear_pwr1 = nn.Linear(last_ndf, last_ndf//2)
         self.linear_pwr2 = nn.Linear(last_ndf//2, ndf)
         self.linear_pwr3 = nn.Linear(ndf, 1)
+
+        self.mask = torch.ones((1, 1, 64, 64)).float().cuda()
+        self.mask[:, :, 32:, :] = 0
     
     def forward(self, input):
+        input = torch.mul(input, self.mask)
+
         x = self.net(input)
         x = x.view((-1, self.nf))
         x1 = self.linear1(x)
