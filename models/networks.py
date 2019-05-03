@@ -681,8 +681,12 @@ class NLayerDiscriminator(nn.Module):
         sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]  # output 1 channel prediction map
         self.model = nn.Sequential(*sequence)
 
+        self.mask = torch.ones((1, 1, 64, 64)).float().cuda()
+        self.mask[:, :, 32:, :] = 0
+
     def forward(self, input):
         """Standard forward."""
+        input = torch.mul(input, self.mask)
         return self.model(input)
 
 
