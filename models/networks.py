@@ -687,6 +687,12 @@ class NLayerDiscriminator(nn.Module):
     def forward(self, input):
         """Standard forward."""
         input = torch.mul(input, self.mask)
+        input.requires_grad_()
+
+        def grad_mask(grad):
+            return torch.mul(grad, self.mask)
+        input.register_hook(grad_mask)
+        
         return self.model(input)
 
 
