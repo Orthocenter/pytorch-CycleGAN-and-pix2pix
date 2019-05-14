@@ -31,6 +31,8 @@ class RssMap2RssMapModel(BaseModel):
         # changing the default values to match the pix2pix paper (https://phillipi.github.io/pix2pix/)
         parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='aligned')
         parser.add_argument('--blocked_size', type=int, default=0, help='size of blocked area')
+        parser.add_argument('--mask_cx', type=int, default=32, help='center x of mask')
+        parser.add_argument('--mask_cy', type=int, default=32, help='center y of mask')
         if is_train:
             parser.set_defaults(pool_size=0, gan_mode='vanilla')
             parser.add_argument('--lambda_L1', type=float, default=100.0, help='weight for L1 loss')
@@ -60,12 +62,16 @@ class RssMap2RssMapModel(BaseModel):
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                       not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
 
-        self.netT = networks.define_T(init_type=opt.init_type, init_gain=opt.init_gain, gpu_ids=opt.gpu_ids, blocked_size=opt.blocked_size)
+        blocked_size = opt.blocked_size
+        self.mask = torch.ones((1, 1, 64, 64)).float().cuda()
+        self.mask[:, :, opt.mask_cx-blocked_size:opt.mask_cx+blocked_size, opt.mask_cy-blocked_size:opt.mask_cy+blocked_size] = 0
+
+        self.netT = networks.define_T(init_type=opt.init_type, init_gain=opt.init_gain, gpu_ids=opt.gpu_ids, mask=self.mask)
 
         if self.isTrain:  # define a discriminator; only single channel input here 
             assert(opt.input_nc == opt.output_nc)
             self.netD = networks.define_D(opt.input_nc, opt.ndf, opt.netD,
-                                          opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids, blocked_size=opt.blocked_size)
+                                          opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain,self.gpu_ids, mask=self.mask)
 
         if self.isTrain:
             # define loss functions

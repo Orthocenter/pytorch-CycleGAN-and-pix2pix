@@ -156,7 +156,7 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     return init_net(net, init_type, init_gain, gpu_ids)
 
 
-def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal', init_gain=0.02, gpu_ids=[], blocked_size=0):
+def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal', init_gain=0.02, gpu_ids=[], mask=None):
     """Create a discriminator
 
     Parameters:
@@ -190,9 +190,9 @@ def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal'
     norm_layer = get_norm_layer(norm_type=norm)
 
     if netD == 'basic':  # default PatchGAN classifier
-        net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, blocked_size=blocked_size)
+        net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, mask=mask)
     elif netD == 'n_layers':  # more options
-        net = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, blocked_size=blocked_size)
+        net = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, mask=mask)
     elif netD == 'pixel':     # classify if each pixel is real or fake
         net = PixelDiscriminator(input_nc, ndf, norm_layer=norm_layer)
     else:
@@ -641,7 +641,7 @@ class UnetSkipConnectionBlock(nn.Module):
 class NLayerDiscriminator(nn.Module):
     """Defines a PatchGAN discriminator"""
 
-    def __init__(self, input_nc, ndf=64, n_layers=3, blocked_size=0, norm_layer=nn.BatchNorm2d):
+    def __init__(self, input_nc, ndf=64, n_layers=3, mask=None, norm_layer=nn.BatchNorm2d):
         """Construct a PatchGAN discriminator
 
         Parameters:
@@ -681,10 +681,7 @@ class NLayerDiscriminator(nn.Module):
         sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]  # output 1 channel prediction map
         self.model = nn.Sequential(*sequence)
 
-        self.blocked_size = blocked_size
-        self.mask = torch.ones((1, 1, 64, 64)).float().cuda()
-        self.mask[:, :, 32-blocked_size:32+blocked_size, 32-blocked_size:32+blocked_size] = 0
-        print('blocked_size in D:', blocked_size)
+        self.mask = mask
 
     def forward(self, input):
         """Standard forward."""
@@ -733,7 +730,7 @@ class TaskNetwork(nn.Module):
     """Defines a task network that predicts the location of the tx
     """
 
-    def __init__(self, input_nc = 1, ndf=32, blocked_size=0, norm_layer=nn.InstanceNorm2d):
+    def __init__(self, input_nc = 1, ndf=32, mask=None, norm_layer=nn.InstanceNorm2d):
         super(TaskNetwork, self).__init__()
     
         self.net = []
@@ -769,10 +766,8 @@ class TaskNetwork(nn.Module):
         self.linear_pwr2 = nn.Linear(last_ndf//2, ndf)
         self.linear_pwr3 = nn.Linear(ndf, 1)
 
-        self.mask = torch.ones((1, 1, 64, 64)).float().cuda()
-        self.mask[:, :, 32-blocked_size:32+blocked_size, 32-blocked_size:32+blocked_size] = 0
+        self.mask = mask
 
-        print('blocked_size in T:', blocked_size)
     
     def forward(self, input):
         input = torch.mul(input, self.mask)
@@ -794,7 +789,7 @@ class TaskNetwork(nn.Module):
         
         return torch.cat((x1, x2), 1)
 
-def define_T(blocked_size=0, init_type='normal', init_gain=0.02, gpu_ids=[]):
-    net = TaskNetwork(blocked_size=blocked_size)
+def define_T(mask=None, init_type='normal', init_gain=0.02, gpu_ids=[]):
+    net = TaskNetwork(mask=mask)
 
     return init_net(net, init_type, init_gain, gpu_ids)
