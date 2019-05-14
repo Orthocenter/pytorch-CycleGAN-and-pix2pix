@@ -26,6 +26,7 @@ from util.visualizer import Visualizer
 
 import torch
 import numpy as np
+import random
 
 
 if __name__ == '__main__':
@@ -33,6 +34,7 @@ if __name__ == '__main__':
     
     torch.manual_seed(opt.seed)
     np.random.seed(opt.seed)
+    random.seed(opt.seed)
 
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     dataset_size = len(dataset)    # get the number of images in the dataset.
