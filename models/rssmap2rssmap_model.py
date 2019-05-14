@@ -52,7 +52,7 @@ class RssMap2RssMapModel(BaseModel):
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real_A', 'fake_B', 'real_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
-        self.text_names = ['tx_loc_pwr', 'task_A', 'task_B']
+        self.text_names = ['tx_loc_pwr', 'task_A']
 
         if self.isTrain:
             self.model_names = ['G', 'D', 'T']
