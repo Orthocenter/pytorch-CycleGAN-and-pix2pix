@@ -141,12 +141,12 @@ class RssMap2RssMapModel(BaseModel):
         self.loss_T_A.backward(retain_graph=True)
         self.optimizer_T.step()             # udpate T's weights
 
-        self.optimizer_T.zero_grad()        # set T's gradients to zero
-        self.task_B = task_B = self.netT(self.fake_B) # T(G(A))
-        self.loss_T_B = self.criterionT(task_B, self.tx_loc_pwr)
-        self.loss_T_B *= self.opt.lambda_T
-        self.loss_T_B.backward(retain_graph=True)
-        self.optimizer_T.step()
+        # self.optimizer_T.zero_grad()        # set T's gradients to zero
+        # self.task_B = task_B = self.netT(self.fake_B) # T(G(A))
+        # self.loss_T_B = self.criterionT(task_B, self.tx_loc_pwr)
+        # self.loss_T_B *= self.opt.lambda_T
+        # self.loss_T_B.backward(retain_graph=True)
+        # self.optimizer_T.step()
 
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
