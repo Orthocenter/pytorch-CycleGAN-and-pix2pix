@@ -83,8 +83,8 @@ class RSSDataset(BaseDataset):
             return []
 
         for root, dirs, fnames in sorted(os.walk(dir)):
-            for d in dirs:
-                images += self.make_dataset(os.path.join(root, d), is_A=is_A)
+            # for d in dirs:
+            #     images += self.make_dataset(os.path.join(root, d), is_A=is_A)
 
             for fname in fnames:
                 if self.is_image_file(fname):
@@ -96,8 +96,7 @@ class RSSDataset(BaseDataset):
                         y = float(loc[1])
                         if x < -3.2 or y < -3.2 or x > 3.2 or y > 3.2:
                             continue
-                    if not is_A:
-                        print(path)
+
                     images.append(path)
         return images[:min(max_dataset_size, len(images))]
 
