@@ -143,6 +143,8 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9)
     elif netG == 'resnet_6blocks':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6)
+    elif netG == 'v3_unet_64':
+        net = CombinedNetwork(input_nc, output_nc, 6, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     elif netG == 'unet_64':
         net = UnetGenerator(input_nc, output_nc, 6, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     elif netG == 'unet_64_stride4':
@@ -793,3 +795,14 @@ def define_T(mask=None, init_type='normal', init_gain=0.02, gpu_ids=[]):
     net = TaskNetwork(mask=mask)
 
     return init_net(net, init_type, init_gain, gpu_ids)
+
+
+class CombinedNetwork(nn.Module):
+    """
+    Generator model for V3: input -> Inverse Propagator model (task network) -> Propagator model (?)
+    """
+    def __init__(self, input_nc = 1, output_nc = 1, ndf=32, mask=None, norm_layer=nn.InstanceNorm2d):
+        super(CombinedNetwork, self).__init__()
+
+        self.inverse_prop = TaskNetwork(input_nc, ndf, mask, norm_layer)
+        self.prop = []

@@ -14,11 +14,14 @@ Some thoughts:
       Both encoder and decoder are trained at the same time (G).
 TODO:
     - Define a new generator class (combining encoder + decoder).
+        - Inverse propagator is the old TaskNetwork
+        - Propagator has to be defined; modeled from what?
     - Change losses.
     - Test with v3_1.1sh script.
 """
 class Rss2RssMergedModel(BaseModel):
-    """ This class implements the V3 model for adversarial localization.
+    """ This class implements the V3 model for adversarial localization,
+        with the task network and propagator inside the `generator`.
 
     The model training requires '--dataset_mode aligned' dataset.
     By default, it uses a '--netG unet256' U-Net generator,
