@@ -3,27 +3,15 @@ from .base_model import BaseModel
 from . import networks
 
 
-"""
-Some thoughts:
-    - The discriminator network is fine as is.
-    - `A` is the source domain (fake); `B` is the target domain (real).
-    - We have to define a new generator (in networks.py)
-      to contain two parts: the inverse propagator (encoder)
-      and the propagator (decoder). We want to access each separately.
-      The inverse propagator is our task network.
-      Both encoder and decoder are trained at the same time (G).
-TODO:
-    - Define a new generator class (combining encoder + decoder).
-    - Change losses.
-    - Test with v3_1.1sh script.
-"""
-class Rss2RssMergedModel(BaseModel):
-    """ This class implements the V3 model for adversarial localization.
+class RssMap2RssMapModel(BaseModel):
+    """ This class implements the pix2pix model, for learning a mapping from input images to output images given paired data.
 
     The model training requires '--dataset_mode aligned' dataset.
     By default, it uses a '--netG unet256' U-Net generator,
     a '--netD basic' discriminator (PatchGAN),
     and a '--gan_mode' vanilla GAN loss (the cross-entropy objective used in the orignal GAN paper).
+
+    pix2pix paper: https://arxiv.org/pdf/1611.07004.pdf
     """
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
@@ -67,9 +55,9 @@ class Rss2RssMergedModel(BaseModel):
         self.text_names = ['tx_loc_pwr', 'task_A', 'task_B']
 
         if self.isTrain:
-            self.model_names = ['G', 'D']
+            self.model_names = ['G', 'D', 'T']
         else:  # during test time, only load G
-            self.model_names = ['G']
+            self.model_names = ['G', 'T']
         # define networks (both generator and discriminator)
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                       not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
@@ -78,6 +66,8 @@ class Rss2RssMergedModel(BaseModel):
         self.mask = torch.ones((1, 1, 64, 64)).float().cuda()
         self.mask[:, :, opt.mask_cx-blocked_size:opt.mask_cx+blocked_size, opt.mask_cy-blocked_size:opt.mask_cy+blocked_size] = 0
 
+        self.netT = networks.define_T(init_type=opt.init_type, init_gain=opt.init_gain, gpu_ids=opt.gpu_ids, mask=self.mask)
+
         if self.isTrain:  # define a discriminator; only single channel input here 
             assert(opt.input_nc == opt.output_nc)
             self.netD = networks.define_D(opt.input_nc, opt.ndf, opt.netD,
@@ -85,11 +75,8 @@ class Rss2RssMergedModel(BaseModel):
 
         if self.isTrain:
             # define loss functions
-            # GAN loss
             self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)
-            # L1 loss for self-regularization
             self.criterionL1 = torch.nn.L1Loss()
-            # (smooth) L1 loss for task network
             self.criterionT = torch.nn.SmoothL1Loss()
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
             self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
@@ -179,4 +166,3 @@ class Rss2RssMergedModel(BaseModel):
         self.set_requires_grad(self.netT, False)  # T requires no gradients when optimizing G
         self.backward_G()                   # calculate graidents for G
         self.optimizer_G.step()             # udpate G's weights
-

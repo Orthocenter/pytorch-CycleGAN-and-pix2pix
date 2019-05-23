@@ -1,7 +1,7 @@
 python train.py \
     --seed=666 \
     --gpu_ids=3 \
-    --dataroot=/mnt/data/yanzi/input_real_emu_train_gamma_5.0_noise_10dBvar_diff_loc_as_synthetic\
+    --dataroot=/home/gomezp/rss-data/1.1\
     --name=rss_v3_1.1 \
     --model=rss2rssmerged\
     --input_nc=1 \
@@ -11,7 +11,7 @@ python train.py \
     --num_threads=12 \
     --batch_size=64 \
     --gan_mode=square \
-    --netG=unet_64 \
+    --netG=v3_unet_64 \
     --lambda_L1=0 \
     --lambda_T=100 \
     --lr=0.00004 \
