@@ -3,7 +3,7 @@ from .base_model import BaseModel
 from . import networks
 
 
-class RssMap2RssMapModel(BaseModel):
+class Rss2RssMergedModel(BaseModel):
     """ This class implements the pix2pix model, for learning a mapping from input images to output images given paired data.
 
     The model training requires '--dataset_mode aligned' dataset.
