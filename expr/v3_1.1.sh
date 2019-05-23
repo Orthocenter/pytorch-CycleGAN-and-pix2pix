@@ -1,0 +1,21 @@
+python train.py \
+    --seed=666 \
+    --gpu_ids=3 \
+    --dataroot=/mnt/data/yanzi/input_real_emu_train_gamma_5.0_noise_10dBvar_diff_loc_as_synthetic\
+    --name=rss_v3_1.1 \
+    --model=rss2rssmerged\
+    --input_nc=1 \
+    --output_nc=1 \
+    --norm=batch \
+    --dataset_mode=rss \
+    --num_threads=12 \
+    --batch_size=64 \
+    --gan_mode=square \
+    --netG=unet_64 \
+    --lambda_L1=0 \
+    --lambda_T=100 \
+    --lr=0.00004 \
+    --display_env=v3_1.1 \
+    --niter=50 \
+    --niter_decay=150 \
+    --verbose

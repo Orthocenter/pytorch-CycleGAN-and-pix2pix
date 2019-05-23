@@ -3,6 +3,19 @@ from .base_model import BaseModel
 from . import networks
 
 
+"""
+Some thoughts:
+    - The discriminator network is fine as is.
+    - `A` is the source domain; `B` is the target domain.
+    - We have to define a new generator (in networks.py)
+      to contain two parts: the inverse propagator (encoder)
+      and the propagator (decoder). We want to access each separately.
+      The inverse propagator is our task network.
+TODO:
+    - Define a new generator class (combining encoder + decoder).
+    - Change losses.
+    - Test with v3_1.1sh script.
+"""
 class Rss2RssMergedModel(BaseModel):
     """ This class implements the pix2pix model, for learning a mapping from input images to output images given paired data.
 
