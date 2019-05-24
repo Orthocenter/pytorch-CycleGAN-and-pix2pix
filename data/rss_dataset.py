@@ -67,7 +67,6 @@ class RSSDataset(BaseDataset):
         print("A size: ", self.A_size)
         self.B_size = len(self.B_paths)
         print("B size: ", self.B_size)
-        exit(0)
 
         self.min_rss = -85
         self.max_rss = 30
@@ -82,9 +81,9 @@ class RSSDataset(BaseDataset):
             print('%s is not a valid directory' % dir)
             return []
 
-        for root, dirs, fnames in sorted(os.walk(dir)):
+        for root, dirs, fnames in os.walk(dir, followlinks=True):
             # for d in dirs:
-            #     images += self.make_dataset(os.path.join(root, d), is_A=is_A)
+            #     images += self.make_dataset(os.path.join(root, d), is_A=is_A) 
 
             for fname in fnames:
                 if self.is_image_file(fname):

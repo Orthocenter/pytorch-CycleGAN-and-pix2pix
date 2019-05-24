@@ -138,6 +138,7 @@ class RssMap2RssMapModel(BaseModel):
         self.optimizer_T.zero_grad()        # set T's gradients to zero
         self.task_A = task_A = self.netT(self.real_A) # T(A)
         self.loss_T_A = self.criterionT(task_A, self.tx_loc_pwr)
+        self.loss_T_A *= self.opt.lambda_T
         self.loss_T_A.backward(retain_graph=True)
         self.optimizer_T.step()             # udpate T's weights
 
