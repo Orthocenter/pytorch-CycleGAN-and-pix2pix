@@ -84,8 +84,8 @@ class RssMap2RssMapModel(BaseModel):
         self.real_A = input['A' if AtoB else 'B'].to(self.device)
         self.real_B = input['B' if AtoB else 'A'].to(self.device)
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
-        self.tx_loc_pwr = input['tx_loc_pwr'].to(self.device)
 
+        self.tx_loc_pwr = input['tx_loc_pwr'].to(self.device)
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         if not self.opt.isTrain: # this is for testing only; during training, we will get
@@ -95,7 +95,10 @@ class RssMap2RssMapModel(BaseModel):
         """Calculate TaskNetwork loss"""
         self.optimizer_T.zero_grad()        # set T's gradients to zero
         self.task_A = task_A = self.netT(self.real_A) # T(A)
+        print(task_A[:,:2])
+        print(self.tx_loc_pwr[:,:2])
         self.loss_T_A = self.criterionT(task_A, self.tx_loc_pwr)
+        self.loss_T_A *= self.opt.lambda_T
         self.loss_T_A.backward(retain_graph=True)
         self.optimizer_T.step()             # udpate T's weights
 

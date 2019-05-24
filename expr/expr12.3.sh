@@ -1,0 +1,21 @@
+python train.py \
+    --seed=666 \
+    --gpu_ids=3 \
+    --dataroot=/mnt/data/yxchen/rss-datasets/expr14.4/train \
+    --name=rss_expr12.3 \
+    --model=rssmap2rssmap \
+    --input_nc=1 \
+    --output_nc=1 \
+    --norm=batch \
+    --dataset_mode=rss \
+    --num_threads=12 \
+    --batch_size=64 \
+    --gan_mode=square \
+    --netG=unet_64 \
+    --lambda_L1=0 \
+    --lambda_T=100 \
+    --lr=0.0001 \
+    --display_env=expr12.3 \
+    --niter=200 \
+    --niter_decay=50 \
+    --verbose

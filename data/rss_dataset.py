@@ -22,6 +22,23 @@ import os
 import re
 import numpy as np
 
+gt = {
+    "10a4be8db0d2": [53, 21, 32],
+    "10a4bec51ff4": [3, 48, 32],
+    "10a4beca20ad": [30, 5, 32],
+    "98fc11691fc5": [35, 24, 32],
+    "9c8ecd102ace": [59, 46, 32]
+}
+
+for k in gt.keys():
+    gt[k] = (np.array(gt[k]) - 32) / 50
+
+
+def get_tx_loc(path):
+    # print(path)
+    mac = path.split('/')[-2]
+    return gt[mac]
+
 class RSSDataset(BaseDataset):
     """RSS Dataset, synthetic data"""
     @staticmethod
@@ -57,9 +74,11 @@ class RSSDataset(BaseDataset):
         self.dir = opt.dataroot
 
         # get the image paths of your dataset;
-        self.A_paths = self.make_dataset(os.path.join(self.dir, "A"))
-        self.A_paths = sorted(self.A_paths)
-        self.B_paths = self.make_dataset(os.path.join(self.dir, "B"), is_A=False)
+        self.A_paths = self.make_dataset(os.path.join(self.dir, "B"), is_A=False, max_dataset_size=opt.max_dataset_size)
+        # self.A_paths = sorted(self.A_paths)
+        random.shuffle(self.A_paths)
+        self.B_paths = self.make_dataset(os.path.join(
+            self.dir, "B"), is_A=False, max_dataset_size=opt.max_dataset_size)
         random.shuffle(self.B_paths)
         self.B_paths = self.B_paths[:min(opt.max_B_size, len(self.B_paths))]
 
@@ -88,6 +107,8 @@ class RSSDataset(BaseDataset):
             for fname in fnames:
                 if self.is_image_file(fname):
                     path = os.path.join(root, fname)
+                    if '10a4be8db0d2' in path:
+                        continue
                     if is_A:
                         loc = path.split('/')[-1].split('_')[1:3]
                         loc = np.array([float(x) for x in loc])
@@ -148,16 +169,12 @@ class RSSDataset(BaseDataset):
         with open(B_path, 'rb') as f:
             data_B = pickle.load(f)
 
-        data_A = self.transform(data_A)
+        data_A = self.transform(data_A, is_A=False)
         data_B = self.transform(data_B, is_A=False)
 
-        tx_loc = torch.tensor(self.get_loc_from_path(A_path)).float()
-        tx_pwr = torch.tensor(self.get_pwr_from_path(A_path)).float()
+        tx_loc_pwr = torch.Tensor(get_tx_loc(A_path)).float()
 
-        tx_loc_pwr = torch.cat((tx_loc, tx_pwr))
-
-        return {'A': data_A, 'B': data_B, 'A_paths': A_path, 'B_paths': B_path,
-                'tx_loc_pwr': tx_loc_pwr}
+        return {'A': data_A, 'B': data_B, 'A_paths': A_path, 'B_paths': B_path, 'tx_loc_pwr': tx_loc_pwr}
 
     def __len__(self):
         """Return the total number of images."""
