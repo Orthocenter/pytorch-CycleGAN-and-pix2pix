@@ -29,7 +29,7 @@ class RssMap2RssMapModel(BaseModel):
         By default, we use vanilla GAN loss, UNet with batchnorm, and aligned datasets.
         """
         # changing the default values to match the pix2pix paper (https://phillipi.github.io/pix2pix/)
-        parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='aligned')
+        parser.set_defaults(norm='batch', netG='unet_256', dataset_mode='rss')
         parser.add_argument('--blocked_size', type=int, default=0, help='size of blocked area')
         parser.add_argument('--mask_cx', type=int, default=32, help='center x of mask')
         parser.add_argument('--mask_cy', type=int, default=32, help='center y of mask')

@@ -54,6 +54,8 @@ class RSSDataset(BaseDataset):
         """
         # parser.add_argument('--new_dataset_option', type=float, default=1.0, help='new dataset option')
         # parser.set_defaults(max_dataset_size=10, new_dataset_option=2.0)  # specify dataset-specific default values
+        print('here')
+        parser.add_argument('--holdout_tx', type=str, default=None, help='hold out a tx for testing')
         return parser
 
     def __init__(self, opt):
@@ -107,7 +109,7 @@ class RSSDataset(BaseDataset):
             for fname in fnames:
                 if self.is_image_file(fname):
                     path = os.path.join(root, fname)
-                    if '10a4be8db0d2' in path:
+                    if self.opt.holdout_tx in path:
                         continue
                     if is_A:
                         loc = path.split('/')[-1].split('_')[1:3]
