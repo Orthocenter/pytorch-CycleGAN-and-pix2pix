@@ -59,7 +59,7 @@ class RSSDataset(BaseDataset):
         # get the image paths of your dataset;
         self.A_paths = self.make_dataset(os.path.join(self.dir, "A"))
         self.A_paths = sorted(self.A_paths)
-        self.B_paths = self.make_dataset(os.path.join(self.dir, "B"))
+        self.B_paths = self.make_dataset(os.path.join(self.dir, "B"), is_A=False)
         random.shuffle(self.B_paths)
         self.B_paths = self.B_paths[:min(opt.max_B_size, len(self.B_paths))]
 
@@ -75,25 +75,26 @@ class RSSDataset(BaseDataset):
         IMG_EXTENSIONS = ['.pickle']
         return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
-    def make_dataset(self, dir, max_dataset_size=float("inf")):
+    def make_dataset(self, dir, max_dataset_size=float("inf"), is_A=True):
         images = []
         if not os.path.isdir(dir):
             print('%s is not a valid directory' % dir)
             return []
 
-        for root, dirs, fnames in sorted(os.walk(dir)):
-            for d in dirs:
-                images += self.make_dataset(os.path.join(root, d))
+        for root, dirs, fnames in os.walk(dir, followlinks=True):
+            # for d in dirs:
+            #     images += self.make_dataset(os.path.join(root, d), is_A=is_A) 
 
             for fname in fnames:
                 if self.is_image_file(fname):
                     path = os.path.join(root, fname)
-                    loc = path.split('/')[-1].split('_')[1:3]
-                    loc = np.array([float(x) for x in loc])
-                    x = float(loc[0])
-                    y = float(loc[1])
-                    if x < -3.2 or y < -3.2 or x > 3.2 or y > 3.2:
-                        continue
+                    if is_A:
+                        loc = path.split('/')[-1].split('_')[1:3]
+                        loc = np.array([float(x) for x in loc])
+                        x = float(loc[0])
+                        y = float(loc[1])
+                        if x < -3.2 or y < -3.2 or x > 3.2 or y > 3.2:
+                            continue
 
                     images.append(path)
         return images[:min(max_dataset_size, len(images))]
@@ -101,10 +102,11 @@ class RSSDataset(BaseDataset):
     def normalize_data(self, data):
         return (data - self.min_rss) / (self.max_rss - self.min_rss) * 2 - 1
 
-    def transform(self, data_A):
+    def transform(self, data_A, is_A=True):
         data_A = self.normalize_data(data_A)
         data_A = torch.tensor(data_A, dtype=torch.float32)
-        data_A = data_A[18:18+64, 18:18+64]
+        if is_A:
+            data_A = data_A[18:18+64, 18:18+64]
         data_A = data_A.view((1, data_A.size()[0], -1))
         return data_A
 
@@ -147,7 +149,7 @@ class RSSDataset(BaseDataset):
             data_B = pickle.load(f)
 
         data_A = self.transform(data_A)
-        data_B = self.transform(data_B)
+        data_B = self.transform(data_B, is_A=False)
 
         tx_loc = torch.tensor(self.get_loc_from_path(A_path)).float()
         tx_pwr = torch.tensor(self.get_pwr_from_path(A_path)).float()
