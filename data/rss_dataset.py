@@ -102,10 +102,10 @@ class RSSDataset(BaseDataset):
     def normalize_data(self, data):
         return (data - self.min_rss) / (self.max_rss - self.min_rss) * 2 - 1
 
-    def transform(self, data_A, is_A=True):
+    def transform(self, data_A, center_crop=True):
         data_A = self.normalize_data(data_A)
         data_A = torch.tensor(data_A, dtype=torch.float32)
-        if is_A:
+        if center_crop:
             data_A = data_A[18:18+64, 18:18+64]
         data_A = data_A.view((1, data_A.size()[0], -1))
         return data_A
@@ -148,8 +148,8 @@ class RSSDataset(BaseDataset):
         with open(B_path, 'rb') as f:
             data_B = pickle.load(f)
 
-        data_A = self.transform(data_A)
-        data_B = self.transform(data_B, is_A=False)
+        data_A = self.transform(data_A, center_crop=not self.opt.raytracing_A)
+        data_B = self.transform(data_B, center_crop=False)
 
         tx_loc = torch.tensor(self.get_loc_from_path(A_path)).float()
         tx_pwr = torch.tensor(self.get_pwr_from_path(A_path)).float()
