@@ -76,6 +76,7 @@ class Rss2RssMergedModel(BaseModel):
         # define networks (both generator and discriminator)
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                       not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+        print("Generator has {} layers".format(len(list(self.netG.model))))
 
         blocked_size = opt.blocked_size
         self.mask = torch.ones((1, 1, 64, 64)).float().cuda()
@@ -97,10 +98,10 @@ class Rss2RssMergedModel(BaseModel):
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
             self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_T = torch.optim.Adam(self.netT.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999)) 
+            #self.optimizer_T = torch.optim.Adam(self.netT.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999)) 
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
-            self.optimizers.append(self.optimizer_T)
+            #self.optimizers.append(self.optimizer_T)
 
     def set_input(self, input):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
@@ -119,9 +120,9 @@ class Rss2RssMergedModel(BaseModel):
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         self.fake_B = self.netG(self.real_A)  # G(A)
-        if not self.opt.isTrain: # this is for testing only; during training, we will get
+        """if not self.opt.isTrain: # this is for testing only; during training, we will get
             self.task_A = self.netT(self.real_A) # T(A)
-            self.task_B = self.netT(self.fake_B) # T(G(A))
+            self.task_B = self.netT(self.fake_B) # T(G(A))"""
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -149,8 +150,8 @@ class Rss2RssMergedModel(BaseModel):
         self.loss_G = self.loss_G_GAN + self.loss_G_L1
         self.loss_G.backward()
 
-    def backward_T(self):
-        """Calculate TaskNetwork loss"""
+    """Calculate TaskNetwork loss"""
+    """def backward_T(self):
         self.optimizer_T.zero_grad()        # set T's gradients to zero
         self.task_A = task_A = self.netT(self.real_A) # T(A)
         self.loss_T_A = self.criterionT(task_A, self.tx_loc_pwr)
@@ -162,7 +163,7 @@ class Rss2RssMergedModel(BaseModel):
         self.loss_T_B = self.criterionT(task_B, self.tx_loc_pwr)
         self.loss_T_B *= self.opt.lambda_T
         self.loss_T_B.backward(retain_graph=True)
-        self.optimizer_T.step()
+        self.optimizer_T.step()"""
 
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
@@ -173,13 +174,13 @@ class Rss2RssMergedModel(BaseModel):
         self.optimizer_D.step()          # update D's weights
 
         # update T
-        self.set_requires_grad(self.netT, True)  # D requires no gradients when optimizing T
+        """self.set_requires_grad(self.netT, True)  # D requires no gradients when optimizing T
         self.optimizer_G.zero_grad()        # set G's gradients to zero
-        self.backward_T()                   # calculate graidents for T
+        self.backward_T()                   # calculate graidents for T"""
 
         # update G
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
-        self.set_requires_grad(self.netT, False)  # T requires no gradients when optimizing G
+        #self.set_requires_grad(self.netT, False)  # T requires no gradients when optimizing G
         self.backward_G()                   # calculate graidents for G
         self.optimizer_G.step()             # udpate G's weights
 
