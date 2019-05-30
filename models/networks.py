@@ -797,6 +797,82 @@ def define_T(mask=None, init_type='normal', init_gain=0.02, gpu_ids=[]):
     return init_net(net, init_type, init_gain, gpu_ids)
 
 
+class UnetSkipConnection(nn.Module):
+    """Defines a Unet block, either upsampling or downsampling"""
+
+    def __init__(self, type, outer_nc, inner_nc, input_nc=None,
+                 outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False, stride=2):
+        """
+        Parameters:
+            type (string)  -- 'up' or 'down', an upsampling or downsampling layer
+            outer_nc (int) -- the number of filters in the outer conv layer
+            inner_nc (int) -- the number of filters in the inner conv layer
+            input_nc (int) -- the number of channels in input images/features
+            outermost (bool)    -- if this module is the outermost module
+            innermost (bool)    -- if this module is the innermost module
+            norm_layer          -- normalization layer
+            user_dropout (bool) -- if use dropout layers.
+            stride (int) -- default stride = 2
+        """
+        super(UnetSkipConnection, self).__init__()
+        self.outermost = outermost
+        if type(norm_layer) == functools.partial:
+            use_bias = norm_layer.func == nn.InstanceNorm2d
+        else:
+            use_bias = norm_layer == nn.InstanceNorm2d
+        if input_nc is None:
+            input_nc = outer_nc
+
+        if type == 'down':
+            # Build a downsampling layer
+            downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
+                                 stride=stride, padding=1, bias=use_bias)
+            downrelu = nn.LeakyReLU(0.2, True)
+            downnorm = norm_layer(inner_nc)
+
+            if outermost:
+                model = [downconv]
+            elif innermost:
+                model = [downrelu, downconv]
+            else:
+                model = [downrelu, downconv, downnorm]
+                if use_dropout:
+                    model = model + [nn.Dropout(0.5)]
+        elif type == 'up':
+            # Build an umsampling layer
+            uprelu = nn.ReLU(True)
+            upnorm = norm_layer(outer_nc)
+
+            if outermost:
+                upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+                                            kernel_size=4, stride=stride,
+                                            padding=1)
+                model = [uprelu, upconv, nn.Tanh()]
+            elif innermost:
+                upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
+                                            kernel_size=4, stride=stride,
+                                            padding=1, bias=use_bias)
+                model = [uprelu, upconv, upnorm]
+            else:
+                upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+                                            kernel_size=4, stride=stride,
+                                            padding=1, bias=use_bias)
+                model = [uprelu, upconv, upnorm]
+                if use_dropout:
+                    model = model + [nn.Dropout(0.5)]
+        else:
+            # Return something
+            pass
+
+        self.model = nn.Sequential(*model)
+
+    def forward(self, x):
+        if self.outermost:
+            return self.model(x)
+        else:   # add skip connections
+            return torch.cat([x, self.model(x)], 1)
+
+
 class CombinedNetwork(nn.Module):
     """
     Generator model for V3: input -> Inverse Propagator (task network) -> Propagator
