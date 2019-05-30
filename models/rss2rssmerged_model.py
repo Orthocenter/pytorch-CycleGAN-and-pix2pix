@@ -12,12 +12,20 @@ Some thoughts:
       and the propagator (decoder). We want to access each separately.
       The inverse propagator is our task network.
       Both encoder and decoder are trained at the same time (G).
-TODO:
+TODO (23/05):
     - Define a new generator class (combining encoder + decoder).
         - Inverse propagator is the old TaskNetwork
         - Propagator has to be defined; modeled from what?
     - Change losses.
     - Test with v3_1.1sh script.
+
+ TODO (30/05):
+    - Use forward hooks!!!! https://pytorch.org/tutorials/beginner/former_torchies/nnft_tutorial.html
+        also look at https://discuss.pytorch.org/t/getting-intermediate-output-of-self-created-sequential/21662
+        and https://discuss.pytorch.org/t/how-can-l-load-my-best-model-as-a-feature-extractor-evaluator/17254/23
+      All we really have to do is separate the innermost layer, keep a reference to the last downsample (which thus maps to latent space),
+      and register a forward hook there. We then use the stored output to guide training.
+     
 """
 class Rss2RssMergedModel(BaseModel):
     """ This class implements the V3 model for adversarial localization,
@@ -76,6 +84,18 @@ class Rss2RssMergedModel(BaseModel):
         # define networks (both generator and discriminator)
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                       not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+
+        """
+        This captures the output of Unet at the innermost layer (latent space).
+        We then use `self.latent` to help guide training.
+        """
+        self.latent = None
+        def get_activation(name):
+            def hook(model, input, output):
+                self.latent = output # No detaching! We want to keep this intermediate history
+
+        self.netG.innermost.define_forward_hook(get_activation('latent'))
+
         print("Generator has {} layers".format(len(list(self.netG.module.model.model))))
 
         blocked_size = opt.blocked_size
