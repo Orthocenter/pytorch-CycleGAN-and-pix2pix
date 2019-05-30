@@ -797,14 +797,62 @@ def define_T(mask=None, init_type='normal', init_gain=0.02, gpu_ids=[]):
     return init_net(net, init_type, init_gain, gpu_ids)
 
 
-class UnetSkipConnection(nn.Module):
-    """Defines a Unet block, either upsampling or downsampling"""
 
-    def __init__(self, type, outer_nc, inner_nc, input_nc=None,
+
+class UnetSkipConnectionUp(nn.Module):
+    """Defines an upsampling Unet block"""
+
+    def __init__(self, outer_nc, inner_nc,
                  outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False, stride=2):
         """
         Parameters:
-            type (string)  -- 'up' or 'down', an upsampling or downsampling layer
+            outer_nc (int) -- the number of filters in the outer conv layer
+            inner_nc (int) -- the number of filters in the inner conv layer
+            outermost (bool)    -- if this module is the outermost module
+            innermost (bool)    -- if this module is the innermost module
+            norm_layer          -- normalization layer
+            user_dropout (bool) -- if use dropout layers.
+            stride (int) -- default stride = 2
+        """
+        super(UnetSkipConnectionUp, self).__init__()
+        self.outermost = outermost
+        if type(norm_layer) == functools.partial:
+            use_bias = norm_layer.func == nn.InstanceNorm2d
+        else:
+            use_bias = norm_layer == nn.InstanceNorm2d
+
+        uprelu = nn.ReLU(True)
+        upnorm = norm_layer(outer_nc)
+        if outermost:
+            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+                                        kernel_size=4, stride=stride,
+                                        padding=1)
+            model = [uprelu, upconv, nn.Tanh()]
+        elif innermost:
+            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
+                                        kernel_size=4, stride=stride,
+                                        padding=1, bias=use_bias)
+            model = [uprelu, upconv, upnorm]
+        else:
+            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+                                        kernel_size=4, stride=stride,
+                                        padding=1, bias=use_bias)
+            model = [uprelu, upconv, upnorm]
+            if use_dropout:
+                model = model + [nn.Dropout(0.5)]
+
+        self.model = nn.Sequential(*model)
+
+    def forward(self, x, skip):
+        return torch.cat([skip, self.model(x)], 1)
+
+class UnetSkipConnectionDown(nn.Module):
+    """Defines a downsampling Unet block"""
+
+    def __init__(self, outer_nc, inner_nc, input_nc=None,
+                 outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False, stride=2):
+        """
+        Parameters:
             outer_nc (int) -- the number of filters in the outer conv layer
             inner_nc (int) -- the number of filters in the inner conv layer
             input_nc (int) -- the number of channels in input images/features
@@ -814,8 +862,7 @@ class UnetSkipConnection(nn.Module):
             user_dropout (bool) -- if use dropout layers.
             stride (int) -- default stride = 2
         """
-        super(UnetSkipConnection, self).__init__()
-        self.outermost = outermost
+        super(UnetSkipConnectionDown, self).__init__()
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
         else:
@@ -823,59 +870,99 @@ class UnetSkipConnection(nn.Module):
         if input_nc is None:
             input_nc = outer_nc
 
-        if type == 'down':
-            # Build a downsampling layer
-            downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
-                                 stride=stride, padding=1, bias=use_bias)
-            downrelu = nn.LeakyReLU(0.2, True)
-            downnorm = norm_layer(inner_nc)
+        # Build a downsampling layer
+        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
+                                stride=stride, padding=1, bias=use_bias)
+        downrelu = nn.LeakyReLU(0.2, True)
+        downnorm = norm_layer(inner_nc)
 
-            if outermost:
-                model = [downconv]
-            elif innermost:
-                model = [downrelu, downconv]
-            else:
-                model = [downrelu, downconv, downnorm]
-                if use_dropout:
-                    model = model + [nn.Dropout(0.5)]
-        elif type == 'up':
-            # Build an umsampling layer
-            uprelu = nn.ReLU(True)
-            upnorm = norm_layer(outer_nc)
-
-            if outermost:
-                upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
-                                            kernel_size=4, stride=stride,
-                                            padding=1)
-                model = [uprelu, upconv, nn.Tanh()]
-            elif innermost:
-                upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
-                                            kernel_size=4, stride=stride,
-                                            padding=1, bias=use_bias)
-                model = [uprelu, upconv, upnorm]
-            else:
-                upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
-                                            kernel_size=4, stride=stride,
-                                            padding=1, bias=use_bias)
-                model = [uprelu, upconv, upnorm]
-                if use_dropout:
-                    model = model + [nn.Dropout(0.5)]
+        if outermost:
+            model = [downconv]
+        elif innermost:
+            model = [downrelu, downconv]
         else:
-            # Return something
-            pass
+            model = [downrelu, downconv, downnorm]
+            if use_dropout:
+                model = model + [nn.Dropout(0.5)]
 
         self.model = nn.Sequential(*model)
 
     def forward(self, x):
-        if self.outermost:
-            return self.model(x)
-        else:   # add skip connections
-            return torch.cat([x, self.model(x)], 1)
+        return self.model(x)
 
 
-class CombinedNetwork(nn.Module):
+class SplitUnetGenerator(nn.Module):
     """
-    Generator model for V3: input -> Inverse Propagator (task network) -> Propagator
+    Generator for split V3 model: input -> Inverse Propagator (downsampling) -> Propagator (upsampling)
+    This is an iterative version of the `UnetGenerator` class, which makes accessing the latent space a bit easier.
     """
-    def __init__(self):
-        super(CombinedNetwork, self).__init__()
+    def __init__(self, input_nc, output_nc, num_downs, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, stride=2):
+        """Construct a Unet generator
+        Parameters:
+            input_nc (int)  -- the number of channels in input images
+            output_nc (int) -- the number of channels in output images
+            num_downs (int) -- the number of downsamplings in UNet. For example, # if |num_downs| == 7,
+                                image of size 128x128 will become of size 1x1 # at the bottleneck
+            ngf (int)       -- the number of filters in the last conv layer
+            norm_layer      -- normalization layer
+        """
+        super(SplitUnetGenerator, self).__init__()
+        # construct unet structure
+        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True, stride=stride)  # add the innermost layer
+        for i in range(num_downs - 5):          # add intermediate layers with ngf * 8 filters
+            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout, stride=stride)
+        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, stride=stride)
+        # gradually reduce the number of filters from ngf * 8 to ngf
+        unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer, stride=stride)
+        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer, stride=stride)
+        self.model = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer, stride=stride)  # add the outermost layer
+
+
+        down = []
+        up = []
+
+        # gradually increase number of filters from ngf * 8 to ngf
+        down += UnetSkipConnectionDown(output_nc, ngf, input_nc=input_nc, outermost=True, norm_layer=norm_layer, stride=stride)
+        down += UnetSkipConnectionDown(ngf, ngf * 2, input_nc=None, norm_layer=norm_layer, stride=stride)
+        down += UnetSkipConnectionDown(ngf * 2, ngf * 4, input_nc=None, norm_layer=norm_layer, stride=stride)
+        down += UnetSkipConnectionDown(ngf * 4, ngf * 8, input_nc=None, norm_layer=norm_layer, stride=stride)
+
+        # intermediate downsampling layers with ngf * 8 filters...
+        for i in range(num_downs - 5):
+            down += UnetSkipConnectionDown(ngf * 8, ngf * 8, input_nc=None, norm_layer=norm_layer, use_dropout=use_dropout, stride=stride)
+
+        # innermost layers
+        down += UnetSkipConnectionDown(ngf * 8, ngf * 8, input_nc=None, norm_layer=norm_layer, innermost=True, stride=stride) # last downsample
+        up += UnetSkipConnectionUp(ngf * 8, ngf * 8, norm_layer=norm_layer, innermost=True, stride=stride) # first upsample
+
+        # intermediate upsampling layers with ngf * 8 filters...
+        for i in range(num_downs - 5):
+            up += UnetSkipConnectionUp(ngf * 8, ngf * 8, input_nc=None, norm_layer=norm_layer, use_dropout=use_dropout, stride=stride)
+
+        # gradually reduce number of filters from ngf * 8 to ngf
+        """
+        TODO: semantics are messed up here, number of filters is not clear for upsampling.
+        """
+        up += UnetSkipConnectionUp(ngf * 4, ngf * 8, norm_layer=norm_layer, stride=stride)
+        up += UnetSkipConnectionUp(ngf * 2, ngf * 4, norm_layer=norm_layer, stride=stride)
+        up += UnetSkipConnectionUp(ngf, ngf * 2, norm_layer=norm_layer, stride=stride)
+        up += UnetSkipConnectionUp(output_nc, ngf, outermost=True, norm_layer=norm_layer, stride=stride)
+
+        self.down = nn.Sequential(*down)
+        self.up = nn.Sequential(*up)
+
+
+    def forward(self, input):
+        """Adapted forward method"""
+
+        # Keep track of skips
+        xs = []
+        for layer in self.down:
+            input = layer(input)
+            xs.append(input)
+
+        for i, layer in enumerate(self.up):
+            """TODO: upsample, fetch skips from xs"""
+            pass
+
+        return input
