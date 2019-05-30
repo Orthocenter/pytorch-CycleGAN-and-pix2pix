@@ -76,7 +76,7 @@ class Rss2RssMergedModel(BaseModel):
         # define networks (both generator and discriminator)
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                       not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
-        print("Generator has {} layers".format(len(list(self.netG.module.model))))
+        print("Generator has {} layers".format(len(list(self.netG.module.model.model))))
 
         blocked_size = opt.blocked_size
         self.mask = torch.ones((1, 1, 64, 64)).float().cuda()
