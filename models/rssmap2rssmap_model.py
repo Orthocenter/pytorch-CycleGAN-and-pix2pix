@@ -81,7 +81,7 @@ class RssMap2RssMapModel(BaseModel):
             self.criterionT = torch.nn.SmoothL1Loss()
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
             self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr/2, betas=(opt.beta1, 0.999))
             self.optimizer_T = torch.optim.Adam(self.netT.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999)) 
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
