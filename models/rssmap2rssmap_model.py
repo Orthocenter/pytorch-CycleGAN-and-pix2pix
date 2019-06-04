@@ -87,6 +87,11 @@ class RssMap2RssMapModel(BaseModel):
             self.optimizers.append(self.optimizer_D)
             self.optimizers.append(self.optimizer_T)
 
+            # self.loss_D = self.loss_D_fake = self.loss_D_real = self.loss_G = self.loss_G_GAN = self.loss_G_L1 = self.loss_G_SYM = self.loss_T_A = self.loss_T_B = 0
+
+    def init_encoder(self):
+        networks.init_generator_weights(self.netG, encoder_only=True)
+
     def set_input(self, input):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
 
@@ -131,10 +136,7 @@ class RssMap2RssMapModel(BaseModel):
         # Second, G(A) = B
         self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         # combine loss and calculate gradients
-        # Third, G(B) = B
-        pred_B = self.netG(self.real_B)
-        self.loss_G_SYM = self.criterionL1(self.real_B, pred_B) * self.opt.lambda_SYM
-        self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.loss_G_SYM
+        self.loss_G = self.loss_G_GAN + self.loss_G_L1
         self.loss_G.backward()
 
     def backward_T(self):
@@ -152,6 +154,14 @@ class RssMap2RssMapModel(BaseModel):
         self.loss_T_B *= self.opt.lambda_T
         self.loss_T_B.backward(retain_graph=True)
         self.optimizer_T.step()
+    
+    def optimize_autoencoder(self):
+        # Third, G(B) = B
+        pred_B = self.netG(self.real_B)
+        self.loss_G_SYM = self.criterionL1(
+            self.real_B, pred_B)*self.opt.lambda_SYM
+        self.loss_G_SYM.backward()
+        self.optimizer_G.step()
 
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
