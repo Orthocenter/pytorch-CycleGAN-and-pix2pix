@@ -132,7 +132,7 @@ class RssMap2RssMapModel(BaseModel):
         # First, G(A) should fake the discriminator
         fake_B = self.fake_B
         pred_fake = self.netD(fake_B)
-        self.loss_G_GAN = self.criterionGAN(pred_fake, True)
+        self.loss_G_GAN = self.criterionGAN(pred_fake, True) * 10
         # Second, G(A) = B
         self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         # combine loss and calculate gradients
