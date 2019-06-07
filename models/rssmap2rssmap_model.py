@@ -106,6 +106,10 @@ class RssMap2RssMapModel(BaseModel):
         if not self.opt.isTrain: # this is for testing only; during training, we will get
             self.task_A = self.netT(self.real_A) # T(A)
             self.task_B = self.netT(self.fake_B) # T(G(A))
+        
+        # extract latent value
+        self.latent = networks.latent_val
+        print("!!!!! latent dim: {}".format(self.latent.dim()))
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
