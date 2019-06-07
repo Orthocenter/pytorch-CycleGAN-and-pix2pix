@@ -567,6 +567,14 @@ class BigStrideUnetSkipConnectionBlock(nn.Module):
             return torch.cat([x, self.model(x)], 1)
 
 
+# hook to capture latent space output
+latent_val = None
+def capture_latent(name):
+    def hook(model, input, output):
+        latent_val = output # to detach or not to detach, that is the question
+        print("!!! latent value: {}".format(latent_val))
+    return hook
+
 class UnetSkipConnectionBlock(nn.Module):
     """Defines the Unet submodule with skip connection.
         X -------------------identity----------------------
@@ -617,6 +625,7 @@ class UnetSkipConnectionBlock(nn.Module):
             down = [downrelu, downconv]
             up = [uprelu, upconv, upnorm]
             model = down + up
+            model[1].register_forward_hook(capture_latent('innermost'))
         else:
             upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=stride,
