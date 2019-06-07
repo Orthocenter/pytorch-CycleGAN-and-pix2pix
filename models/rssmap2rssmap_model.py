@@ -109,7 +109,7 @@ class RssMap2RssMapModel(BaseModel):
         
         # extract latent value
         self.latent = networks.latent_val
-        print("!!!!! latent dim: {}".format(self.latent.dim()))
+        print("!!!!! latent dim: {}".format(self.latent.size()))
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
