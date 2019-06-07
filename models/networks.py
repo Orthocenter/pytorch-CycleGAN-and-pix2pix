@@ -571,6 +571,7 @@ class BigStrideUnetSkipConnectionBlock(nn.Module):
 latent_val = None
 def capture_latent(name):
     def hook(model, input, output):
+        global latent_val
         latent_val = output # to detach or not to detach, that is the question
         print("!!! latent value: {}".format(latent_val))
     return hook
