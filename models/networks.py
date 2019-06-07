@@ -623,10 +623,10 @@ class UnetSkipConnectionBlock(nn.Module):
             upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=stride,
                                         padding=1, bias=use_bias)
+            downconv.register_forward_hook(capture_latent('innermost'))
             down = [downrelu, downconv]
             up = [uprelu, upconv, upnorm]
             model = down + up
-            model[1].register_forward_hook(capture_latent('innermost'))
         else:
             upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=stride,
