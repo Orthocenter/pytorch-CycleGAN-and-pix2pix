@@ -573,7 +573,6 @@ def capture_latent(name):
     def hook(model, input, output):
         global latent_val
         latent_val = output # to detach or not to detach, that is the question
-        print("!!! latent value: {}".format(latent_val))
     return hook
 
 class UnetSkipConnectionBlock(nn.Module):
@@ -642,6 +641,7 @@ class UnetSkipConnectionBlock(nn.Module):
         self.model = nn.Sequential(*model)
 
     def forward(self, x):
+        print("!!! input dimensions: {}".format(x.size()))
         if self.outermost:
             return self.model(x)
         else:   # add skip connections
