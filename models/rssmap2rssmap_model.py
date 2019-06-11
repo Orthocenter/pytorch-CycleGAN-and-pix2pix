@@ -107,9 +107,10 @@ class RssMap2RssMapModel(BaseModel):
             self.task_A = self.netT(self.real_A) # T(A)
             self.task_B = self.netT(self.fake_B) # T(G(A))
         
-        # extract latent value
+        # extract latent value -- careful! the first dimension here is the BATCH index!
         self.latent = networks.latent_val
         print("!!!!! latent dim: {}".format(self.latent.size()))
+        print("!!!!! tx loc power dim: {}".format(self.tx_loc_pwr.size()))
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
