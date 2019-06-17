@@ -125,6 +125,10 @@ class RssMap2RssMapModel(BaseModel):
         # of our generator?
         self.latent_coords = networks.latent_val[:,0:2].squeeze()
 
+        if not self.isTrain:
+            print("!! latent coords: {}".format(self.latent_coords))
+            print("!! actual coords: {}".format(self.tx_loc_pwr))
+
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
         # Fake; stop backprop to the generator by detaching fake_B
