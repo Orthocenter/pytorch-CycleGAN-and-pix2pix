@@ -125,9 +125,6 @@ class RssMap2RssMapModel(BaseModel):
         # of our generator?
         self.latent_coords = networks.latent_val[:,0:2].squeeze()
 
-        if self.isTrain:
-            print("!! latent coords: {}".format(self.latent_coords))
-
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
         # Fake; stop backprop to the generator by detaching fake_B
@@ -157,7 +154,7 @@ class RssMap2RssMapModel(BaseModel):
 
         # Task constraint on encoder
         # ---------------------
-        self.loss_G_task_L1 = self.criterionL1(self.latent_coords, self.tx_loc_pwr[:,0:2]) * self.opt.lambda_L1
+        self.loss_G_task_L1 = self.criterionT(self.latent_coords, self.tx_loc_pwr[:,0:2]) * self.opt.lambda_L1
         # ---------------------
 
         # Combine loss and calculate gradients

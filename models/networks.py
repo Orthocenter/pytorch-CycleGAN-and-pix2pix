@@ -573,7 +573,6 @@ def capture_latent(name):
     def hook(model, input, output):
         global latent_val
         latent_val = output.data # to detach or not to detach, that is the question
-        #print("!! captured latent coord: {}".format(output[:,0:2].squeeze()))
     return hook
 
 class UnetSkipConnectionBlock(nn.Module):
