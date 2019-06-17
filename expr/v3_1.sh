@@ -15,6 +15,5 @@ python train.py \
     --display_env=v3_1 \
     --niter=100 \
     --niter_decay=100 \
-    --max_B_size=1 \
     --lr=0.0001 \
     --verbose
