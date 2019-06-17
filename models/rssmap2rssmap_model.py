@@ -92,10 +92,10 @@ class RssMap2RssMapModel(BaseModel):
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
             self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_T = torch.optim.Adam(self.netT.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999)) 
+            #self.optimizer_T = torch.optim.Adam(self.netT.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999)) 
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
-            self.optimizers.append(self.optimizer_T)
+            #self.optimizers.append(self.optimizer_T)
 
     def set_input(self, input):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
@@ -121,6 +121,8 @@ class RssMap2RssMapModel(BaseModel):
         """
         
         # extract latent value -- careful! the first dimension here is the BATCH index!
+        # we also might have to `copy_` in order to avoid messing up the differentiable history
+        # of our generator?
         self.latent_coords = networks.latent_val[:,0:2].squeeze()
 
     def backward_D(self):
@@ -163,7 +165,7 @@ class RssMap2RssMapModel(BaseModel):
 
     """
     def backward_T(self):
-        """Calculate TaskNetwork loss"""
+        Calculate TaskNetwork loss
         self.optimizer_T.zero_grad()        # set T's gradients to zero
         self.task_A = task_A = self.netT(self.real_A) # T(A)
         self.loss_T_A = self.criterionT(task_A, self.tx_loc_pwr)
@@ -195,7 +197,7 @@ class RssMap2RssMapModel(BaseModel):
 
         # update G
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
-        self.set_requires_grad(self.netT, False)  # T requires no gradients when optimizing G
+        #self.set_requires_grad(self.netT, False)  # T requires no gradients when optimizing G
         self.backward_G()                   # calculate graidents for G
         self.optimizer_G.step()             # udpate G's weights
 
