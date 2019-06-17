@@ -1,7 +1,7 @@
 python train.py \
     --seed=666 \
     --gpu_ids=3 \
-    --dataroot=/mnt/data/yanzi/input_synthetic_train_gamma_5.0 \
+    --dataroot=/home/gomezp/input_synthetic_train_gamma_5.0 \
     --name=rss_v3_1 \
     --model=rssmap2rssmap \
     --input_nc=1 \
