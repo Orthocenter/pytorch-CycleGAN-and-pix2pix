@@ -641,7 +641,6 @@ class UnetSkipConnectionBlock(nn.Module):
         self.model = nn.Sequential(*model)
 
     def forward(self, x):
-        print("!!! input dimensions: {}".format(x.size()))
         if self.outermost:
             return self.model(x)
         else:   # add skip connections

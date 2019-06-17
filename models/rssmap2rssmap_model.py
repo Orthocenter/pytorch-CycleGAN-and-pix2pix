@@ -109,8 +109,8 @@ class RssMap2RssMapModel(BaseModel):
         
         # extract latent value -- careful! the first dimension here is the BATCH index!
         self.latent_coords = networks.latent_val[:,0:2].squeeze()
-        print("!! coords: {}".format(self.latent_coords))
-        print("!! txloc : {}".format(self.tx_loc_pwr))
+        #print("!! coords: {}".format(self.latent_coords))
+        #print("!! txloc : {}".format(self.tx_loc_pwr))
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
