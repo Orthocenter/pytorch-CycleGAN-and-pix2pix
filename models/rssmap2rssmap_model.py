@@ -159,8 +159,8 @@ class RssMap2RssMapModel(BaseModel):
 
         # Combine loss and calculate gradients
         # ---------------------
-        self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.loss_G_task_L1
-        #self.loss_G = self.loss_G_GAN + self.loss_G_task_L1
+        #self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.loss_G_task_L1
+        self.loss_G = self.loss_G_GAN + self.loss_G_task_L1
         self.loss_G.backward()
 
     """
