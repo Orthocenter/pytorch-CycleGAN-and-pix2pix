@@ -108,8 +108,7 @@ class RssMap2RssMapModel(BaseModel):
             self.task_B = self.netT(self.fake_B) # T(G(A))
         
         # extract latent value -- careful! the first dimension here is the BATCH index!
-        self.latent = networks.latent_val
-        self.latent_coords = self.latent[:,0:2].squeeze()
+        self.latent_coords = networks.latent_val[:,0:2].squeeze()
         print("!! coords: {}".format(self.latent_coords))
 
     def backward_D(self):
