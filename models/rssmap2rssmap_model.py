@@ -149,7 +149,7 @@ class RssMap2RssMapModel(BaseModel):
         # Should we keep this L1 loss?
         # ---------------------
         # Second, G(A) = B
-        self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
+        #self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         # ---------------------
 
         # Task constraint on encoder
