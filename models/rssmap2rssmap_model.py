@@ -196,8 +196,8 @@ class RssMap2RssMapModel(BaseModel):
         """
 
         # update G
+        self.optimizer_G.zero_grad()
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
-        #self.set_requires_grad(self.netT, False)  # T requires no gradients when optimizing G
         self.backward_G()                   # calculate graidents for G
         self.optimizer_G.step()             # udpate G's weights
 
