@@ -47,17 +47,28 @@ class RssMap2RssMapModel(BaseModel):
             opt (Option class)-- stores all the experiment flags; needs to be a subclass of BaseOptions
         """
         BaseModel.__init__(self, opt)
+        """
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
         self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake', 'T_A', 'T_B']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real_A', 'fake_B', 'real_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
         self.text_names = ['tx_loc_pwr', 'task_A', 'task_B']
+        """
+        # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
+        self.loss_names = ['G_GAN', 'G_task_L1', 'D_real', 'D_fake']
+        # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
+        self.visual_names = ['real_A', 'fake_B', 'real_B']
+        # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
+        self.text_names = ['tx_loc_pwr', 'latent_coords']
+
 
         if self.isTrain:
-            self.model_names = ['G', 'D', 'T']
+            #self.model_names = ['G', 'D', 'T']
+            self.model_names = ['G', 'D']
         else:  # during test time, only load G
-            self.model_names = ['G', 'T']
+            #self.model_names = ['G', 'T']
+            self.model_names = ['G']
         # define networks (both generator and discriminator)
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                       not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
@@ -66,7 +77,7 @@ class RssMap2RssMapModel(BaseModel):
         self.mask = torch.ones((1, 1, 64, 64)).float().cuda()
         self.mask[:, :, opt.mask_cx-blocked_size:opt.mask_cx+blocked_size, opt.mask_cy-blocked_size:opt.mask_cy+blocked_size] = 0
 
-        self.netT = networks.define_T(init_type=opt.init_type, init_gain=opt.init_gain, gpu_ids=opt.gpu_ids, mask=self.mask)
+        #self.netT = networks.define_T(init_type=opt.init_type, init_gain=opt.init_gain, gpu_ids=opt.gpu_ids, mask=self.mask)
 
         if self.isTrain:  # define a discriminator; only single channel input here 
             assert(opt.input_nc == opt.output_nc)
@@ -103,14 +114,14 @@ class RssMap2RssMapModel(BaseModel):
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         self.fake_B = self.netG(self.real_A)  # G(A)
+        """
         if not self.opt.isTrain: # this is for testing only; during training, we will get
             self.task_A = self.netT(self.real_A) # T(A)
             self.task_B = self.netT(self.fake_B) # T(G(A))
+        """
         
         # extract latent value -- careful! the first dimension here is the BATCH index!
         self.latent_coords = networks.latent_val[:,0:2].squeeze()
-        #print("!! coords: {}".format(self.latent_coords))
-        #print("!! txloc : {}".format(self.tx_loc_pwr))
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -136,7 +147,7 @@ class RssMap2RssMapModel(BaseModel):
         # Should we keep this L1 loss?
         # ---------------------
         # Second, G(A) = B
-        self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
+        # self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         # ---------------------
 
         # Task constraint on encoder
@@ -146,9 +157,11 @@ class RssMap2RssMapModel(BaseModel):
 
         # Combine loss and calculate gradients
         # ---------------------
-        self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.loss_G_task_L1
+        #self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.loss_G_task_L1
+        self.loss_G = self.loss_G_GAN + self.loss_G_task_L1
         self.loss_G.backward()
 
+    """
     def backward_T(self):
         """Calculate TaskNetwork loss"""
         self.optimizer_T.zero_grad()        # set T's gradients to zero
@@ -163,6 +176,7 @@ class RssMap2RssMapModel(BaseModel):
         self.loss_T_B *= self.opt.lambda_T
         self.loss_T_B.backward(retain_graph=True)
         self.optimizer_T.step()
+    """
 
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)
@@ -172,10 +186,12 @@ class RssMap2RssMapModel(BaseModel):
         self.backward_D()                # calculate gradients for D
         self.optimizer_D.step()          # update D's weights
 
+        """
         # update T
         self.set_requires_grad(self.netT, True)  # D requires no gradients when optimizing T
         self.optimizer_G.zero_grad()        # set G's gradients to zero
         self.backward_T()                   # calculate graidents for T
+        """
 
         # update G
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
