@@ -132,10 +132,21 @@ class RssMap2RssMapModel(BaseModel):
         fake_B = self.fake_B
         pred_fake = self.netD(fake_B)
         self.loss_G_GAN = self.criterionGAN(pred_fake, True)
+
+        # Should we keep this L1 loss?
+        # ---------------------
         # Second, G(A) = B
         self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
-        # combine loss and calculate gradients
-        self.loss_G = self.loss_G_GAN + self.loss_G_L1
+        # ---------------------
+
+        # Task constraint on encoder
+        # ---------------------
+        self.loss_G_task_L1 = self.criterionL1(self.latent_coords, self.tx_loc_pwr[:,0:2]) * self.opt.lambda_L1
+        # ---------------------
+
+        # Combine loss and calculate gradients
+        # ---------------------
+        self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.loss_G_task_L1
         self.loss_G.backward()
 
     def backward_T(self):
