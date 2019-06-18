@@ -74,12 +74,14 @@ def test_single(A_path, B_path):
         t = visuals[v]
         visuals_np[v] = t.cpu().float().squeeze().numpy()
     
-    task_B = model.task_B.cpu().float().squeeze().numpy()
-    task_A = model.task_A.cpu().float().squeeze().numpy()
+    latent_loc = model.latent_coords.cpu().float().squeeze().numpy()
+    #task_B = model.task_B.cpu().float().squeeze().numpy()
+    #task_A = model.task_A.cpu().float().squeeze().numpy()
     with torch.no_grad():
-        task_rB = model.netT(data_B).cpu().float().squeeze().numpy()
+        #task_rB = model.netT(data_B).cpu().float().squeeze().numpy()
+        task_rB = [0,0,0]
     
-    return realA, realB, visuals_np, tx_loc_np, tx_pwr_np, task_A, task_B, task_rB
+    return realA, realB, visuals_np, tx_loc_np, tx_pwr_np, latent_loc, task_rB
 
 # tx location l2 diff, rss map l1 diff
 gamma_a = "2.0"
@@ -124,12 +126,10 @@ for epoch in test_epoches:
     model = create_model(opt)      # create a model given opt.model and other options
     model.setup(opt)               # regular setup: load and print networks; create schedulers
 
-    dis_gt_taskA = []
-    dis_gt_taskB = []
+    dis_gt_latent = []
     dis_gt_taskrB = []
     
-    pwr_gt_taskA = []
-    pwr_gt_taskB = []
+    pwr_gt_latent = []
     pwr_gt_taskrB = []
     
     sim_realA = []
@@ -148,15 +148,15 @@ for epoch in test_epoches:
         test_file = "img_%.2f_%.2f_"  % (x, y) + "%s_" + "%d.pickle" % pwr
         path_b = os.path.join(dir_b, test_file % gamma_b)
         
-        realA, realB, visuals, txloc, txpwr, task_A, task_B, task_rB = test_single(path_a, path_b)
+        realA, realB, visuals, txloc, txpwr, latent_loc, task_rB = test_single(path_a, path_b)
 
         fakeB = visuals['fake_B']
-        dis_gt_taskA.append(l2(txloc - task_A[:2]))
-        dis_gt_taskB.append(l2(txloc - task_B[:2]))
+        dis_gt_latent.append(l2(txloc - latent_loc[:2]))
         dis_gt_taskrB.append(l2(txloc - task_rB[:2]))
-        pwr_gt_taskA.append(abs(txpwr - task_A[2:]))
-        pwr_gt_taskB.append(abs(txpwr - task_B[2:]))
-        pwr_gt_taskrB.append(abs(txpwr - task_rB[2:]))
+        # not training to compute power for now
+        #pwr_gt_taskA.append(abs(txpwr - task_A[2:]))
+        #pwr_gt_taskB.append(abs(txpwr - task_B[2:]))
+        #pwr_gt_taskrB.append(abs(txpwr - task_rB[2:]))
 
         scaled_realA = scale_rss(denorm_rss(realA))
         scaled_fakeB = scale_rss(denorm_rss(fakeB))
@@ -164,28 +164,28 @@ for epoch in test_epoches:
         sim_realA.append(l1(scaled_realA - scaled_realB) / realA.size)
         sim_fakeB.append(l1(scaled_fakeB - scaled_realB) / realA.size)
     
-    dis_gt_taskA = np.array(dis_gt_taskA) * 5
-    dis_gt_taskB = np.array(dis_gt_taskB) * 5
+    #dis_gt_taskA = np.array(dis_gt_taskA) * 5
+    #dis_gt_taskB = np.array(dis_gt_taskB) * 5
+    dis_gt_latent = np.array(dis_gt_latent) * 5
     dis_gt_taskrB = np.array(dis_gt_taskrB) * 5
-    pwr_gt_taskA = denorm_rss(np.array(pwr_gt_taskA))
-    pwr_gt_taskB = denorm_rss(np.array(pwr_gt_taskB))
-    pwr_gt_taskrB = denorm_rss(np.array(pwr_gt_taskrB))
+    #pwr_gt_taskA = denorm_rss(np.array(pwr_gt_taskA))
+    #pwr_gt_taskB = denorm_rss(np.array(pwr_gt_taskB))
+    #pwr_gt_taskrB = denorm_rss(np.array(pwr_gt_taskrB))
     sim_realA = np.array(sim_realA)
     sim_fakeB = np.array(sim_fakeB)
     
-    print('[epoch %d] dis_gt_taskA: %.2f, dis_gt_taskB: %.2f, dis_gt_taskrB: %.2f' % \
-          (epoch, dis_gt_taskA.mean(), dis_gt_taskB.mean(), dis_gt_taskrB.mean()))
-    print('           pwr_gt_taskA: %.2f, pwr_gt_taskB: %.2f, pwr_gt_taskrB: %.2f' % \
-          (pwr_gt_taskA.mean(), pwr_gt_taskB.mean(), pwr_gt_taskrB.mean()))
+    print('[epoch %d] dis_gt_latent: %.2f, dis_gt_taskrB: %.2f' % \
+          (epoch, dis_gt_latent.mean(), dis_gt_taskrB.mean()))
+    #print('           pwr_gt_taskA: %.2f, pwr_gt_taskB: %.2f, pwr_gt_taskrB: %.2f' % \
+    #      (pwr_gt_taskA.mean(), pwr_gt_taskB.mean(), pwr_gt_taskrB.mean()))
     print('           sim_realA: %.2f, sim_fakeB: %.2f' % (sim_realA.mean(), sim_fakeB.mean()))
     
-    d3.append((dis_gt_taskA.mean(), dis_gt_taskA.min(), dis_gt_taskA.max()))
-    d4.append((dis_gt_taskB.mean(), dis_gt_taskB.min(), dis_gt_taskB.max()))
+    d4.append((dis_gt_latent.mean(), dis_gt_latent.min(), dis_gt_latent.max()))
     d5.append((dis_gt_taskrB.mean(), dis_gt_taskrB.min(), dis_gt_taskrB.max()))
 
-    p1.append((pwr_gt_taskA.mean(), pwr_gt_taskA.min(), pwr_gt_taskA.max()))
+    """p1.append((pwr_gt_taskA.mean(), pwr_gt_taskA.min(), pwr_gt_taskA.max()))
     p2.append((pwr_gt_taskB.mean(), pwr_gt_taskB.min(), pwr_gt_taskB.max()))
-    p3.append((pwr_gt_taskrB.mean(), pwr_gt_taskrB.min(), pwr_gt_taskrB.max()))
+    p3.append((pwr_gt_taskrB.mean(), pwr_gt_taskrB.min(), pwr_gt_taskrB.max()))"""
     
     sim1.append((sim_realA.mean(), sim_realA.min(), sim_realA.max()))
     sim2.append((sim_fakeB.mean(), sim_fakeB.min(), sim_fakeB.max()))
