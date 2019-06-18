@@ -123,7 +123,7 @@ class RssMap2RssMapModel(BaseModel):
         # extract latent value -- careful! the first dimension here is the BATCH index!
         # we also might have to `copy_` in order to avoid messing up the differentiable history
         # of our generator?
-        self.latent_coords = networks.latent_val[:,0:2].squeeze()
+        self.latent_coords = networks.latent_val[:,0:2].clone().squeeze()
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -154,7 +154,12 @@ class RssMap2RssMapModel(BaseModel):
 
         # Task constraint on encoder
         # ---------------------
-        self.loss_G_task_L1 = self.criterionT(self.latent_coords, self.tx_loc_pwr[:,0:2]) * self.opt.lambda_T
+        # Compute G(G(A)) and capture corresponding latent coordinates
+        _ = self.netG(fake_B)
+        latent_coords_prime = networks.latent_val[:,0:2].squeeze()
+        #self.loss_G_task_L1 = self.criterionT(self.latent_coords, self.tx_loc_pwr[:,0:2]) * self.opt.lambda_T
+        # Task constraint is L1 on latent coordinates of G(A) and G(G(A))
+        self.loss_G_task_L1 = self.criterionT(self.latent_coords, latent_coords_prime) * self.opt.lambda_T
         # ---------------------
 
         # Combine loss and calculate gradients
