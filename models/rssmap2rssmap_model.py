@@ -139,11 +139,12 @@ class RssMap2RssMapModel(BaseModel):
         #self.loss_G_task_L1 = self.criterionT(self.latent_coords, self.tx_loc_pwr[:,0:2]) * self.opt.lambda_T
         # Task constraint is L1 on latent coordinates of G(A) and G(G(A))
         self.loss_G_task_L1 = self.criterionT(self.latent_coords, latent_coords_prime) * self.opt.lambda_T
+        self.loss_G_label_L1 = self.criterionT(self.latent_coords, self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
 
         # Combine loss and calculate gradients
         # ---------------------
         #self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.loss_G_task_L1
-        self.loss_G = self.loss_G_GAN + self.loss_G_task_L1
+        self.loss_G = self.loss_G_GAN + self.loss_G_task_L1 + self.loss_G_label_L1
         self.loss_G.backward()
 
     """
