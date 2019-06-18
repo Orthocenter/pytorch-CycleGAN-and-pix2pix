@@ -157,6 +157,10 @@ class RssMap2RssMapModel(BaseModel):
         # Compute G(G(A)) and capture corresponding latent coordinates
         _ = self.netG(fake_B)
         latent_coords_prime = networks.latent_val[:,0:2].squeeze()
+
+        print("!! coords G(G(A)): {}".format(latent_coords_prime[0:3]))
+        print("!! coords G(A)   : {}".format(self.latent_coords[0:3]))
+
         #self.loss_G_task_L1 = self.criterionT(self.latent_coords, self.tx_loc_pwr[:,0:2]) * self.opt.lambda_T
         # Task constraint is L1 on latent coordinates of G(A) and G(G(A))
         self.loss_G_task_L1 = self.criterionT(self.latent_coords, latent_coords_prime) * self.opt.lambda_T
