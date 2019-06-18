@@ -120,9 +120,9 @@ class RssMap2RssMapModel(BaseModel):
             self.task_B = self.netT(self.fake_B) # T(G(A))
         """
         
-        # extract latent value -- careful! the first dimension here is the BATCH index!
-        # we also might have to `copy_` in order to avoid messing up the differentiable history
-        # of our generator?
+        # Extract latent coordinates.
+        # Have to `clone()` because the global variable will be overwritten when we
+        # compute G(G(A)) in `backward_G`.
         self.latent_coords = networks.latent_val[:,0:2].clone().squeeze()
 
     def backward_D(self):
@@ -158,8 +158,8 @@ class RssMap2RssMapModel(BaseModel):
         _ = self.netG(fake_B)
         latent_coords_prime = networks.latent_val[:,0:2].squeeze()
 
-        print("!! coords G(G(A)): {}".format(latent_coords_prime[0:3]))
-        print("!! coords G(A)   : {}".format(self.latent_coords[0:3]))
+        #print("!! coords G(G(A)): {}".format(latent_coords_prime[0:3]))
+        #print("!! coords G(A)   : {}".format(self.latent_coords[0:3]))
 
         #self.loss_G_task_L1 = self.criterionT(self.latent_coords, self.tx_loc_pwr[:,0:2]) * self.opt.lambda_T
         # Task constraint is L1 on latent coordinates of G(A) and G(G(A))
