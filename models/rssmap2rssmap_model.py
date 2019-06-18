@@ -100,13 +100,9 @@ class RssMap2RssMapModel(BaseModel):
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
 
-        # Compute G(A)
-        self.fake_B = self.netG(self.real_A)
-
-        # Extract latent coordinates from G(A)
-        # Have to `clone()` because the global variable will be overwritten when we
-        # compute G(G(A)) in `backward_G` for the task loss on the encoder.
-        self.latent_coords = networks.latent_val[:,0:2].clone().squeeze()
+        # Compute G(A) and extract latent coordinates
+        self.fake_B, self.latent_coords = self.netG(self.real_A)
+        self.latent_coords = self.latent_coords[:,:2].squeeze()
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -132,8 +128,8 @@ class RssMap2RssMapModel(BaseModel):
         # Task constraint on encoder
         # ---------------------
         # Compute G(G(A)) and capture corresponding latent coordinates
-        _ = self.netG(fake_B)
-        latent_coords_prime = networks.latent_val[:,0:2].squeeze()
+        _, latent_coords_prime = self.netG(fake_B)
+        latent_coords_prime = latent_coords_prime[:,:2].squeeze()
 
         
         #self.loss_G_task_L1 = self.criterionT(self.latent_coords, self.tx_loc_pwr[:,0:2]) * self.opt.lambda_T
