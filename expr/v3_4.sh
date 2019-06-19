@@ -16,4 +16,5 @@ python train.py \
     --niter=100 \
     --niter_decay=100 \
     --lr=0.00004 \
+    --lambda_T=0
     --verbose
