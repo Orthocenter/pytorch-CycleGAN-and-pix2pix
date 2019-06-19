@@ -102,8 +102,8 @@ class RssMap2RssMapModel(BaseModel):
 
         # Compute G(A) and extract latent coordinates
         self.fake_B, self.latent_coords = self.netG(self.real_A)
-        print("!! forward latent: {}".format(self.latent_coords.squeeze()))
-        self.latent_coords = self.latent_coords[:,:2].squeeze()
+        self.latent_coords = self.latent_coords[:,:2]
+        print("!! forward latent: {}".format(self.latent_coords))
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -130,7 +130,7 @@ class RssMap2RssMapModel(BaseModel):
         # ---------------------
         # Compute G(G(A)) and extract corresponding latent coordinates
         _, latent_coords_prime = self.netG(fake_B)
-        latent_coords_prime = latent_coords_prime[:,:2].squeeze()
+        latent_coords_prime = latent_coords_prime[:,:2]
         # Task constraint is L1 on latent coordinates of G(A) and G(G(A))
         self.loss_G_task_L1 = self.criterionT(self.latent_coords, latent_coords_prime) * self.opt.lambda_T
         # (Optional) constraint on the synthetic labels
