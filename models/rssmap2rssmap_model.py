@@ -140,7 +140,7 @@ class RssMap2RssMapModel(BaseModel):
         #self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.loss_G_task_L1
         #self.loss_G = self.loss_G_GAN + self.loss_G_task_L1 + self.loss_G_label_L1
         #self.latent.retain_grad()
-        self.loss_G = self.loss_G_task_L1 + self.loss_G_label_L1
+        self.loss_G = self.loss_G_GAN + self.loss_G_task_L1 + self.loss_G_label_L1
         self.loss_G.backward()
     """
     def backward_T(self):
@@ -179,9 +179,9 @@ class RssMap2RssMapModel(BaseModel):
         self.optimizer_G.zero_grad()
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
         self.backward_G()                   # calculate graidents for G
-        for param in self.netG.parameters():
-                if param.grad is not None:
-                        print(param.grad.data.sum())
-        print(" --- done with gradients...")
+        #for param in self.netG.parameters():
+        #        if param.grad is not None:
+        #                print(param.grad.data.sum())
+        #print(" --- done with gradients...")
         self.optimizer_G.step()             # udpate G's weights
 
