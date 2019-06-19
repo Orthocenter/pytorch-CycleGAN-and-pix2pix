@@ -103,6 +103,7 @@ class RssMap2RssMapModel(BaseModel):
         # Compute G(A) and extract latent coordinates
         self.fake_B, self.latent_coords = self.netG(self.real_A)
         self.latent_coords = self.latent_coords[:,:2].squeeze()
+        print("!! forward latent: {}".format(self.latent_coords))
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""

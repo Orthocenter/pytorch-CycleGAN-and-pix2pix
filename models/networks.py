@@ -573,7 +573,6 @@ def capture_latent(name):
     def hook(model, input, output):
         global latent_val
         latent_val = output
-        print("!! latent val hook: {}".format(latent_val))
     return hook
 
 class UnetSkipConnectionBlock(nn.Module):
@@ -646,7 +645,6 @@ class UnetSkipConnectionBlock(nn.Module):
             out = self.model(x)
             latent = latent_val.clone()
             latent.retain_grad()
-            print("!! cloned latent: {}".format(latent))
             return (out, latent)
         else:   # add skip connections
             return torch.cat([x, self.model(x)], 1)
