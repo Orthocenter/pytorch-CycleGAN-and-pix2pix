@@ -102,6 +102,7 @@ class RssMap2RssMapModel(BaseModel):
 
         # Compute G(A) and extract latent coordinates
         self.fake_B, self.latent_coords = self.netG(self.real_A)
+        print("!! latent: {}".format(self.latent_coords))
         self.latent_coords = self.latent_coords[:,5:7]
 
     def backward_D(self):
