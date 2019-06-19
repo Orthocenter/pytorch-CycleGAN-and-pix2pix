@@ -572,7 +572,7 @@ latent_val = None
 def capture_latent(name):
     def hook(model, input, output):
         global latent_val
-        latent_val = output.data # to detach or not to detach, that is the question
+        latent_val = output
     return hook
 
 class UnetSkipConnectionBlock(nn.Module):
