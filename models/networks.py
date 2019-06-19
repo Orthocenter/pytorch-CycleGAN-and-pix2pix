@@ -573,7 +573,6 @@ def capture_latent(name):
     def hook(model, input, output):
         global latent_val
         latent_val = output
-        latent_val.retain_grad()
     return hook
 
 class UnetSkipConnectionBlock(nn.Module):
