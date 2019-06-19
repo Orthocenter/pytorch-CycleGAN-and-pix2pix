@@ -573,6 +573,7 @@ def capture_latent(name):
     def hook(model, input, output):
         global latent_val
         latent_val = output
+        print("!! latent val hook: {}".format(latent_val))
     return hook
 
 class UnetSkipConnectionBlock(nn.Module):
