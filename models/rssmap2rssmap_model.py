@@ -52,7 +52,7 @@ class RssMap2RssMapModel(BaseModel):
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real_A', 'fake_B', 'real_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
-        self.text_names = ['tx_loc_pwr', 'latent_coords']
+        self.text_names = ['tx_loc_pwr', 'latent']
 
 
         if self.isTrain:
@@ -101,9 +101,7 @@ class RssMap2RssMapModel(BaseModel):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
 
         # Compute G(A) and extract latent coordinates
-        self.fake_B, self.latent_coords = self.netG(self.real_A)
-        print("!! latent: {}".format(self.latent_coords))
-        self.latent_coords = self.latent_coords[:,5:7]
+        self.fake_B, self.latent = self.netG(self.real_A)
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
@@ -129,12 +127,11 @@ class RssMap2RssMapModel(BaseModel):
         # Task constraint on encoder
         # ---------------------
         # Compute G(G(A)) and extract corresponding latent coordinates
-        _, latent_coords_prime = self.netG(fake_B)
-        latent_coords_prime = latent_coords_prime[:,5:7]
+        _, latent_prime = self.netG(fake_B)
         # Task constraint is L1 on latent coordinates of G(A) and G(G(A))
-        self.loss_G_task_L1 = self.criterionT(self.latent_coords, latent_coords_prime) * self.opt.lambda_T
+        self.loss_G_task_L1 = self.criterionT(self.latent[:,:2], latent_prime[:,:2]) * self.opt.lambda_T
         # (Optional) constraint on the synthetic labels
-        self.loss_G_label_L1 = self.criterionT(self.latent_coords, self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
+        self.loss_G_label_L1 = self.criterionT(self.latent[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
 
         # Combine loss and calculate gradients
         # ---------------------
