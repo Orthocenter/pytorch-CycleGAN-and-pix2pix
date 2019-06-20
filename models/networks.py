@@ -623,7 +623,9 @@ class UnetSkipConnectionBlock(nn.Module):
                                         kernel_size=4, stride=stride,
                                         padding=1, bias=use_bias)
             downconv.register_forward_hook(capture_latent('innermost'))
-            down = [downrelu, downconv]
+            #down = [downrelu, downconv]
+            # Hard-coding feature dimensions for now... figure this out!
+            down = [nn.Linear(512, 512, bias=False), downconv]
             up = [uprelu, upconv, upnorm]
             model = down + up
         else:
