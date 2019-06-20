@@ -132,14 +132,12 @@ class RssMap2RssMapModel(BaseModel):
         self.loss_G_task_L1 = self.criterionT(self.latent[:,:2], latent_prime[:,:2]) * self.opt.lambda_T
         # (Optional) constraint on the synthetic labels
         self.loss_G_label_L1 = self.criterionT(self.latent[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
-        #self.loss_G_label_L1 = self.criterionT(networks.latent_val.squeeze()[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
 
         # Combine loss and calculate gradients
         # ---------------------
         #self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.loss_G_task_L1
-        #self.loss_G = self.loss_G_GAN + self.loss_G_task_L1 + self.loss_G_label_L1
-        #self.latent.retain_grad()
         self.loss_G = self.loss_G_GAN + self.loss_G_task_L1 + self.loss_G_label_L1
+        #self.loss_G = self.loss_G_task_L1 + self.loss_G_label_L1
         self.loss_G.backward()
     """
     def backward_T(self):
@@ -183,4 +181,5 @@ class RssMap2RssMapModel(BaseModel):
         #                print(param.grad.data.sum())
         #print(" --- done with gradients...")
         self.optimizer_G.step()             # udpate G's weights
+        #print("!! innermost conv weights: {}".format(networks.innermost_conv.weight))
 

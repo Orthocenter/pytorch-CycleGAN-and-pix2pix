@@ -572,7 +572,7 @@ latent_val = None
 def capture_latent(name):
     def hook(model, input, output):
         global latent_val
-        latent_val = output
+        latent_val = output.clone()
     return hook
 
 class UnetSkipConnectionBlock(nn.Module):
@@ -604,6 +604,7 @@ class UnetSkipConnectionBlock(nn.Module):
             use_bias = norm_layer == nn.InstanceNorm2d
         if input_nc is None:
             input_nc = outer_nc
+
         downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                              stride=stride, padding=1, bias=use_bias)
         downrelu = nn.LeakyReLU(0.2, True)
@@ -623,9 +624,7 @@ class UnetSkipConnectionBlock(nn.Module):
                                         kernel_size=4, stride=stride,
                                         padding=1, bias=use_bias)
             downconv.register_forward_hook(capture_latent('innermost'))
-            #down = [downrelu, downconv]
-            # Hard-coding feature dimensions for now... figure this out!
-            down = [nn.Linear(512, 512, bias=False), downconv]
+            down = [downrelu, downconv]
             up = [uprelu, upconv, upnorm]
             model = down + up
         else:
@@ -645,7 +644,7 @@ class UnetSkipConnectionBlock(nn.Module):
     def forward(self, x):
         if self.outermost:
             out = self.model(x)
-            latent = latent_val.clone()
+            latent = latent_val #.clone()
             latent.retain_grad()
             return (out, latent.squeeze())
         else:   # add skip connections
