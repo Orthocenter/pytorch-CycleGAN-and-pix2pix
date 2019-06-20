@@ -15,5 +15,6 @@ python train.py \
     --display_env=v3_6 \
     --niter=50 \
     --niter_decay=150 \
-    --lr=0.000004 \
+    --lr=0.00001 \
+    --lambda_T=10 \
     --verbose
