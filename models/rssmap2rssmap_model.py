@@ -127,11 +127,10 @@ class RssMap2RssMapModel(BaseModel):
         # Task constraint on encoder
         # ---------------------
         # Compute G(G(A)) and extract corresponding latent coordinates
-        #_, latent_prime = self.netG(fake_B)
+        _, latent_prime = self.netG(fake_B)
         # Task constraint is L1 on latent coordinates of G(A) and G(G(A))
-        #self.loss_G_task_L1 = self.criterionT(self.latent[:,:2], latent_prime[:,:2]) * self.opt.lambda_T
+        self.loss_G_task_L1 = self.criterionT(self.latent[:,:2], latent_prime[:,:2]) * self.opt.lambda_T
         # (Optional) constraint on the synthetic labels
-        self.loss_G_task_L1 = 0
         self.loss_G_label_L1 = self.criterionT(self.latent[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
         #self.loss_G_label_L1 = self.criterionT(networks.latent_val.squeeze()[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
 
