@@ -132,8 +132,8 @@ class RssMap2RssMapModel(BaseModel):
         #self.loss_G_task_L1 = self.criterionT(self.latent[:,:2], latent_prime[:,:2]) * self.opt.lambda_T
         # (Optional) constraint on the synthetic labels
         self.loss_G_task_L1 = 0
-        #self.loss_G_label_L1 = self.criterionT(self.latent[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
-        self.loss_G_label_L1 = self.criterionT(networks.latent_val.squeeze()[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
+        self.loss_G_label_L1 = self.criterionT(self.latent[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
+        #self.loss_G_label_L1 = self.criterionT(networks.latent_val.squeeze()[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
 
         # Combine loss and calculate gradients
         # ---------------------
@@ -179,9 +179,9 @@ class RssMap2RssMapModel(BaseModel):
         self.optimizer_G.zero_grad()
         self.set_requires_grad(self.netD, False)  # D requires no gradients when optimizing G
         self.backward_G()                   # calculate graidents for G
-        #for param in self.netG.parameters():
-        #        if param.grad is not None:
-        #                print(param.grad.data.sum())
-        #print(" --- done with gradients...")
+        for param in self.netG.parameters():
+                if param.grad is not None:
+                        print(param.grad.data.sum())
+        print(" --- done with gradients...")
         self.optimizer_G.step()             # udpate G's weights
 

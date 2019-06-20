@@ -643,9 +643,7 @@ class UnetSkipConnectionBlock(nn.Module):
     def forward(self, x):
         if self.outermost:
             out = self.model(x)
-            latent = latent_val.clone()
-            latent.retain_grad()
-            return (out, latent.squeeze())
+            return (out, latent_val.clone().retain_grad().squeeze())
         else:   # add skip connections
             return torch.cat([x, self.model(x)], 1)
 
