@@ -17,7 +17,7 @@ opt.display_id = -1   # no visdom display; the test code saves the results to a 
 
 # parameters for this experiments
 ###############################
-opt.name = "rss_v3_3"
+opt.name = "rss_v3_7"
 
 dir_a = "/mnt/data/yanzi/input_synthetic_train_gamma_2.0"
 dir_b = "/mnt/data/yanzi/input_real_emu_train_gamma_5.0_noise_10dBvar_same_loc_as_synthetic"
@@ -79,7 +79,8 @@ def test_single(A_path, B_path):
     
     # extract v3 task output
     with torch.no_grad():
-        _, task_tx_loc = model.netG(data_A).cpu().float().squeeze().numpy()
+        _, task_tx_loc = model.netG(data_A)
+        task_tx_loc = task_tx_loc.cpu().float().squeeze().numpy()
     
     return realA, realB, visuals_np, tx_loc_np, tx_pwr_np, task_tx_loc
 
