@@ -117,6 +117,7 @@ def denorm_rss(x):
 gamma_a = "2.0"
 gamma_b = "5.0"
 
+# Bookkeeping, TODO: clean up and summarize
 d3 = []
 d4 = []
 d5 = []
@@ -172,18 +173,18 @@ for epoch in test_epoches:
         # Compute!
         realA, realB, visuals, txloc, txpwr, task_txloc = test_single(path_a, path_b)
 
-        # Calculate various statistics
+        # Calculate performance metrics
         ###############################
         fakeB = visuals['fake_B']
 
         # Transmitter location L2 distance
         dis_gt_loc.append(l2(txloc - task_txloc))
         # TODO: train power prediction as well
-        # dis_gt_pwr.append(abs(txpwr - task_pwr))
 
         scaled_realA = scale_rss(denorm_rss(realA))
         scaled_fakeB = scale_rss(denorm_rss(fakeB))
         scaled_realB = scale_rss(denorm_rss(realB))
+
         # Per-pixel RSS map L1 distances
         sim_realA.append(l1(scaled_realA - scaled_realB) / realA.size)
         sim_fakeB.append(l1(scaled_fakeB - scaled_realB) / realA.size)
@@ -191,7 +192,7 @@ for epoch in test_epoches:
     
     #dis_gt_taskA = np.array(dis_gt_taskA) * 5
     #dis_gt_taskB = np.array(dis_gt_taskB) * 5
-    dis_gt_latent = np.array(dis_gt_loc) * 5
+    dis_gt_loc = np.array(dis_gt_loc) * 5 # TODO: why x5?
     #dis_gt_taskrB = np.array(dis_gt_taskrB) * 5
     #pwr_gt_taskA = denorm_rss(np.array(pwr_gt_taskA))
     #pwr_gt_taskB = denorm_rss(np.array(pwr_gt_taskB))
@@ -199,21 +200,18 @@ for epoch in test_epoches:
     sim_realA = np.array(sim_realA)
     sim_fakeB = np.array(sim_fakeB)
     
-    """print('[epoch %d] dis_gt_latent: %.2f, dis_gt_taskrB: %.2f' % \
-          (epoch, dis_gt_latent.mean(), dis_gt_taskrB.mean()))"""
-    print('[epoch %d] dis_gt_latent: %.2f' % \
-          (epoch, dis_gt_latent.mean()))
+    # Print localization statistics
+    print('[epoch %d] dis_gt_loc: %.2f' % \
+          (epoch, dis_gt_loc.mean()))
 
-    #print('           pwr_gt_taskA: %.2f, pwr_gt_taskB: %.2f, pwr_gt_taskrB: %.2f' % \
-    #      (pwr_gt_taskA.mean(), pwr_gt_taskB.mean(), pwr_gt_taskrB.mean()))
+    # Print per-pixel RSS map difference statistics
     print('           sim_realA: %.2f, sim_fakeB: %.2f' % (sim_realA.mean(), sim_fakeB.mean()))
     
-    d4.append((dis_gt_latent.mean(), dis_gt_latent.min(), dis_gt_latent.max()))
+    # Collect epoch statistics
+    d4.append((dis_gt_loc.mean(), dis_gt_loc.min(), dis_gt_loc.max()))
     #d5.append((dis_gt_taskrB.mean(), dis_gt_taskrB.min(), dis_gt_taskrB.max()))
-
     """p1.append((pwr_gt_taskA.mean(), pwr_gt_taskA.min(), pwr_gt_taskA.max()))
     p2.append((pwr_gt_taskB.mean(), pwr_gt_taskB.min(), pwr_gt_taskB.max()))
     p3.append((pwr_gt_taskrB.mean(), pwr_gt_taskrB.min(), pwr_gt_taskrB.max()))"""
-    
     sim1.append((sim_realA.mean(), sim_realA.min(), sim_realA.max()))
     sim2.append((sim_fakeB.mean(), sim_fakeB.min(), sim_fakeB.max()))
