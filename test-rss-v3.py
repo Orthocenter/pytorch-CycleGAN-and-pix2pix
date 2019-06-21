@@ -1,74 +1,82 @@
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
 import sys
+import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 # sys.path.append('../')
 
 from models import create_model
 from options.test_options import TestOptions
 
-opt = TestOptions().parse([])  # get test options
-# hard-code some parameters for test
-opt.num_threads = 0   # test code only supports num_threads = 1
-opt.batch_size = 1    # test code only supports batch_size = 1
-opt.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
-opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
-opt.display_id = -1   # no visdom display; the test code saves the results to a HTML file.
-
-# parameters for this experiments
-###############################
-opt.name = "rss_v3_7"
-
-dir_a = "/mnt/data/yanzi/input_synthetic_train_gamma_2.0"
-dir_b = "/mnt/data/yanzi/input_real_emu_train_gamma_5.0_noise_10dBvar_same_loc_as_synthetic"
-
-test_epoches = range(200,205,5)
-
-###############################
-
-opt.model = "rssmap2rssmap"
-opt.input_nc = 1
-opt.output_nc = 1
-opt.norm = "batch"
-opt.netG = "unet_64"
-
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from matplotlib.colors import Normalize
 import numpy as np
+import math
+import glob
 
 import pickle
 import torch
 
 from data.rss_dataset import RSSDataset
 
-opt.dataroot = ''
-dataset = RSSDataset(opt)
+# Hard-code parameters -- should match training!
+###############################
+opt = TestOptions().parse([])  # get test options
+opt.num_threads = 0   # test code only supports num_threads = 1
+opt.batch_size = 1    # test code only supports batch_size = 1
+opt.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
+opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
+opt.display_id = -1   # no visdom display; the test code saves the results to an HTML file.
+opt.gpu_ids = 1 # use these GPUs
+opt.model = "rssmap2rssmap"
+opt.input_nc = 1
+opt.output_nc = 1
+opt.norm = "batch"
+opt.netG = "unet_64"
+opt.dataroot = '' # will test one image at a time
+###############################
 
+# Choose model and data paths
+###############################
+opt.name = "rss_v3_7"
+dir_a = "/mnt/data/yanzi/input_synthetic_train_gamma_2.0"
+dir_b = "/mnt/data/yanzi/input_real_emu_train_gamma_5.0_noise_10dBvar_same_loc_as_synthetic"
+test_epoches = range(200,205,5)
+###############################
+
+dataset = RSSDataset(opt) # we just need the functionality in RSSDataset
+
+
+"""
+Given synthetic RSS map path `A_path` and
+real RSS map path `B_path`, compute generated
+fake RSS map G(A) and transmitter location using
+the v3 model.
+"""
 def test_single(A_path, B_path):
-    # open source A and target B
     with open(A_path, 'rb') as f:
         data_A = pickle.load(f)
     with open(B_path, 'rb') as f:
         data_B = pickle.load(f)
     
+    # Prepare images as model input
     data_A = dataset.transform(data_A).unsqueeze(0)
     data_B = dataset.transform(data_B).unsqueeze(0)
     
-    # extract ground truth from filenames
+    # Extract ground truth from filenames
     tx_loc_np = dataset.get_loc_from_path(A_path)
     tx_loc = torch.tensor(tx_loc_np).float()
     tx_pwr_np = dataset.get_pwr_from_path(A_path)
     tx_pwr = torch.tensor(tx_pwr_np).float()
-
     tx_loc_pwr = torch.cat((tx_loc, tx_pwr))
 
-    data = {'A': data_A, 'B': data_B, 'A_paths': A_path, 'B_paths': B_path, 'tx_loc_pwr': tx_loc}
+    # Pack input data
+    data = {'A': data_A, 'B': data_B, 'A_paths': A_path, 'B_paths': B_path, 'tx_loc_pwr': tx_loc_pwr}
     
     realA = data_A.squeeze().numpy()
     realB = data_B.squeeze().numpy()
     
-    # compute v3 visual output
+    # Forward and extract visuals
     model.set_input(data)
     model.test()
     visuals = model.get_current_visuals()
@@ -77,19 +85,20 @@ def test_single(A_path, B_path):
         t = visuals[v]
         visuals_np[v] = t.cpu().float().squeeze().numpy()
     
-    # extract v3 task output
+    # Extract transmitter location from latent space
+    task_tx_loc = model.latent[:2].cpu().float().squeeze().numpy()
+    """
+    This is old: used for previous model on separate task network
     with torch.no_grad():
         _, task_tx_loc = model.netG(data_A)
         task_tx_loc = task_tx_loc.cpu().float().squeeze().numpy()
+    """
     
     return realA, realB, visuals_np, tx_loc_np, tx_pwr_np, task_tx_loc
 
-# tx location l2 diff, rss map l1 diff
-gamma_a = "2.0"
-gamma_b = "5.0"
 
-import math
-import glob
+###############################
+# Helper functions
 
 def l1(x):
     return np.sum(np.abs(x))
@@ -102,6 +111,10 @@ def scale_rss(x):
     
 def denorm_rss(x):
     return (x + 1) / 2 * (dataset.max_rss - dataset.min_rss) + dataset.min_rss
+###############################
+
+gamma_a = "2.0"
+gamma_b = "5.0"
 
 d3 = []
 d4 = []
