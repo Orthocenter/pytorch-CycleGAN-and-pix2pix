@@ -214,3 +214,19 @@ for epoch in test_epoches:
     p3.append((pwr_gt_taskrB.mean(), pwr_gt_taskrB.min(), pwr_gt_taskrB.max()))"""
     sim1.append((sim_realA.mean(), sim_realA.min(), sim_realA.max()))
     sim2.append((sim_fakeB.mean(), sim_fakeB.min(), sim_fakeB.max()))
+
+
+# Plot some figures
+import time
+timestamp = time.time()
+out_dir = "./results/{}_out_{}".format(opt.name, timestamp)
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
+
+plt.figure()
+plt.title("Localization error (mean)")
+plt.xlabel("Epoch")
+plt.ylabel("Distance")
+
+plt.plot(test_epoches, d4)
+plt.savefig("{}/loc_errs.pdf".format(out_dir))
