@@ -191,13 +191,13 @@ for epoch in test_epoches:
     print('           sim_realA: %.2f, sim_fakeB: %.2f' % (sim_realA.mean(), sim_fakeB.mean()))
     
     # Collect epoch statistics
-    d4.append((dis_gt_loc.mean(), dis_gt_loc.min(), dis_gt_loc.max()))
+    d4.append((dis_gt_loc.mean(), dis_gt_loc.std(), dis_gt_loc.min(), dis_gt_loc.max()))
     #d5.append((dis_gt_taskrB.mean(), dis_gt_taskrB.min(), dis_gt_taskrB.max()))
     """p1.append((pwr_gt_taskA.mean(), pwr_gt_taskA.min(), pwr_gt_taskA.max()))
     p2.append((pwr_gt_taskB.mean(), pwr_gt_taskB.min(), pwr_gt_taskB.max()))
     p3.append((pwr_gt_taskrB.mean(), pwr_gt_taskrB.min(), pwr_gt_taskrB.max()))"""
     sim1.append((sim_realA.mean(), sim_realA.min(), sim_realA.max()))
-    sim2.append((sim_fakeB.mean(), sim_fakeB.min(), sim_fakeB.max()))
+    sim2.append((sim_fakeB.mean(), sim_fakeB.std(), sim_fakeB.min(), sim_fakeB.max()))
 
 
 # Plot some figures
@@ -206,13 +206,30 @@ timestamp = time.time()
 out_dir = "./results/{}_out_{}".format(opt.name, timestamp)
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
+test_epoches = list(test_epoches)
 
+# Localization error
+###############################
 plt.figure()
 plt.title("Localization error (mean)")
 plt.xlabel("Epoch")
-plt.ylabel("Distance")
+plt.ylabel("Distance (L2)")
 
 d4 = np.array(d4)
-test_epoches = list(test_epoches)
-plt.plot(test_epoches, d4[:,0], "s--")
+loc_errs = d4[:,0]
+loc_std = d4[:,1]
+plt.errorbar(test_epoches, loc_errs, loc_std, marker="s", linestyle="--", capsize=5, color="blue")
 plt.savefig("{}/loc_errs.pdf".format(out_dir))
+
+# Per-pixel RSS error
+###############################
+plt.figure()
+plt.title("Per-pixel RSS error (mean)")
+plt.xlabel("Epoch")
+plt.ylabel("Distance (L1)")
+
+sim2 = np.array(sim2)
+rss_errs = sim2[:,0]
+rss_std = sim2[:,1]
+plt.errorbar(test_epoches, rss_errs, rss_std, marker="s", linestyle="--", capsize=5, color="red")
+plt.savefig("{}/rss_errs.pdf".format(out_dir))
