@@ -203,6 +203,7 @@ for epoch in test_epoches:
 ###############################
 # Plot some figures
 import time
+
 timestamp = time.time()
 out_dir = "./results/{}_out_{}".format(opt.name, timestamp)
 if not os.path.exists(out_dir):
@@ -234,3 +235,12 @@ rss_errs = sim2[:,0]
 rss_std = sim2[:,1]
 plt.errorbar(test_epoches, rss_errs, rss_std, marker="s", linestyle="--", capsize=5, color="red")
 plt.savefig("{}/rss_errs.pdf".format(out_dir))
+
+
+###############################
+# Export stats
+import json
+
+data = {"loc": d4, "rss": sim2}
+with open("{}/raw.json", "w") as f:
+    json.dump(data, f)
