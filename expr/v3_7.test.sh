@@ -1,7 +1,6 @@
 python test-rss-v3.py \
     --seed=666 \
-    --gpu_ids=1 \
-    --display_id=-1 \
+    --gpu_ids=3 \
     --dataroot='' \
     --name=rss_v3_7 \
     --model=rssmap2rssmap \

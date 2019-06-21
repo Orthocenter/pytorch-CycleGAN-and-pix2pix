@@ -22,14 +22,15 @@ from data.rss_dataset import RSSDataset
 opt = TestOptions().parse()  # get test options
 opt.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
 opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
+opt.display_id = -1   # do not use visdom; we will save plots ourselves
 
 # Choose model and data paths
 ###############################
 dir_a = "/mnt/data/yanzi/input_synthetic_train_gamma_2.0"
 dir_b = "/mnt/data/yanzi/input_real_emu_train_gamma_5.0_noise_10dBvar_same_loc_as_synthetic"
-test_epoches = range(100,200,100)
 ###############################
 
+test_epoches = range(30,200,10)
 dataset = RSSDataset(opt) # we just need the functionality in RSSDataset
 model = create_model(opt) # Create a model given opt.model and other options
 
@@ -213,5 +214,5 @@ plt.ylabel("Distance")
 
 d4 = np.array(d4)
 test_epoches = list(test_epoches)
-plt.plot(test_epoches, d4[:,0])
+plt.plot(test_epoches, d4[:,0], "s--")
 plt.savefig("{}/loc_errs.pdf".format(out_dir))
