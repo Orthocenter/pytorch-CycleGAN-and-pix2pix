@@ -1,6 +1,6 @@
 python train.py \
     --seed=666 \
-    --gpu_ids=1 \
+    --gpu_ids=3 \
     --dataroot=/home/gomezp/rss-data/v3_6 \
     --name=rss_v3_8 \
     --model=rssmap2rssmap \
@@ -16,5 +16,4 @@ python train.py \
     --niter=50 \
     --niter_decay=150 \
     --lr=0.0001 \
-    --lambda_T=100 \
     --verbose

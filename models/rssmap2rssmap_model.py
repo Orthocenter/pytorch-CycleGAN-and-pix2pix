@@ -35,8 +35,9 @@ class RssMap2RssMapModel(BaseModel):
         parser.add_argument('--mask_cy', type=int, default=32, help='center y of mask')
         if is_train:
             parser.set_defaults(pool_size=0, gan_mode='vanilla')
-            parser.add_argument('--lambda_L1', type=float, default=100.0, help='weight for L1 loss')
-            parser.add_argument('--lambda_T', type=float, default=100.0, help='weight for T loss')
+            parser.add_argument('--lambda_G', type=float, default=1.0, help='weight for generator GAN loss')
+            parser.add_argument('--lambda_enc', type=float, default=100.0, help='weight for encoder constraint loss')
+            parser.add_argument('--lambda_syn', type=float, default=100.0, help='weight for synthetic label loss')
 
         return parser
 
@@ -122,22 +123,18 @@ class RssMap2RssMapModel(BaseModel):
         # First, G(A) should fake the discriminator
         fake_B = self.fake_B
         pred_fake = self.netD(fake_B)
-        self.loss_G_GAN = self.criterionGAN(pred_fake, True)
+        self.loss_G_GAN = self.criterionGAN(pred_fake, True) * self.opt.lambda_G
 
-        # Task constraint on encoder
-        # ---------------------
         # Compute G(G(A)) and extract corresponding latent coordinates
         _, latent_prime = self.netG(fake_B)
-        # Task constraint is L1 on latent coordinates of G(A) and G(G(A))
-        self.loss_G_task_L1 = self.criterionT(self.latent[:,:2], latent_prime[:,:2]) * self.opt.lambda_T
-        # (Optional) constraint on the synthetic labels
-        self.loss_G_label_L1 = self.criterionT(self.latent[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_T
+        # Constraint L1 on latent coordinates of G(A) and G(G(A))
+        self.loss_G_enc_L1 = self.criterionT(self.latent[:,:2], latent_prime[:,:2]) * self.opt.lambda_enc
+        # Constraint on the synthetic labels
+        self.loss_G_syn_L1 = self.criterionT(self.latent[:,:2], self.tx_loc_pwr[:,:2]) * self.opt.lambda_syn
 
         # Combine loss and calculate gradients
         # ---------------------
-        #self.loss_G = self.loss_G_GAN + self.loss_G_L1 + self.loss_G_task_L1
-        self.loss_G = self.loss_G_GAN + self.loss_G_task_L1 + self.loss_G_label_L1
-        #self.loss_G = self.loss_G_task_L1 + self.loss_G_label_L1
+        self.loss_G = self.loss_G_GAN + self.loss_G_enc_L1 + self.loss_G_syn_L1
         self.loss_G.backward()
     """
     def backward_T(self):
