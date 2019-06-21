@@ -200,6 +200,7 @@ for epoch in test_epoches:
     sim2.append((sim_fakeB.mean(), sim_fakeB.std(), sim_fakeB.min(), sim_fakeB.max()))
 
 
+###############################
 # Plot some figures
 import time
 timestamp = time.time()
@@ -208,10 +209,10 @@ if not os.path.exists(out_dir):
     os.makedirs(out_dir)
 test_epoches = list(test_epoches)
 
-# Localization error
 ###############################
+# Localization error
 plt.figure()
-plt.title("Localization error (mean)")
+plt.title("{} - Localization error (mean)".format(opt.name))
 plt.xlabel("Epoch")
 plt.ylabel("Distance (L2)")
 
@@ -221,10 +222,10 @@ loc_std = d4[:,1]
 plt.errorbar(test_epoches, loc_errs, loc_std, marker="s", linestyle="--", capsize=5, color="blue")
 plt.savefig("{}/loc_errs.pdf".format(out_dir))
 
-# Per-pixel RSS error
 ###############################
+# Per-pixel RSS error
 plt.figure()
-plt.title("Per-pixel RSS error (mean)")
+plt.title("{} - Per-pixel RSS error (mean)".format(opt.name))
 plt.xlabel("Epoch")
 plt.ylabel("Distance (L1)")
 
