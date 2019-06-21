@@ -27,7 +27,7 @@ opt.batch_size = 1    # test code only supports batch_size = 1
 opt.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
 opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
 opt.display_id = -1   # no visdom display; the test code saves the results to an HTML file.
-opt.gpu_ids = 1 # use these GPUs
+opt.gpu_ids = [3] # use these GPUs
 opt.model = "rssmap2rssmap"
 opt.input_nc = 1
 opt.output_nc = 1
@@ -41,7 +41,7 @@ opt.dataroot = '' # will test one image at a time
 opt.name = "rss_v3_7"
 dir_a = "/mnt/data/yanzi/input_synthetic_train_gamma_2.0"
 dir_b = "/mnt/data/yanzi/input_real_emu_train_gamma_5.0_noise_10dBvar_same_loc_as_synthetic"
-test_epoches = range(200,205,5)
+test_epoches = range(30,200,10)
 ###############################
 
 dataset = RSSDataset(opt) # we just need the functionality in RSSDataset
@@ -139,6 +139,8 @@ model = create_model(opt)
 
 for epoch in test_epoches:
     
+    print("Testing model at epoch {}...".format(epoch))
+
     # Prepare to load model at `epoch`
     epoches.append(epoch)
     opt.epoch = "%d" % epoch
