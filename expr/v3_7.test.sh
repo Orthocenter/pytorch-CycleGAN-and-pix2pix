@@ -1,14 +1,15 @@
-python test.py \
+python test-rss-v3.py \
     --seed=666 \
     --gpu_ids=1 \
-    --dataroot=/mnt/data/yanzi/testing_real_emu_train_gamma_5.0_noise_10dBvar \
+    --display_id=-1 \
+    --dataroot='' \
     --name=rss_v3_7 \
     --model=rssmap2rssmap \
     --input_nc=1 \
     --output_nc=1 \
     --norm=batch \
     --dataset_mode=rss \
-    --num_threads=12 \
-    --batch_size=64 \
+    --num_threads=0 \
+    --batch_size=1 \
     --netG=unet_64 \
     --verbose
