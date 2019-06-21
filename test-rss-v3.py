@@ -41,7 +41,7 @@ opt.dataroot = '' # will test one image at a time
 opt.name = "rss_v3_7"
 dir_a = "/mnt/data/yanzi/input_synthetic_train_gamma_2.0"
 dir_b = "/mnt/data/yanzi/input_real_emu_train_gamma_5.0_noise_10dBvar_same_loc_as_synthetic"
-test_epoches = range(30,200,10)
+test_epoches = range(100,200,100)
 ###############################
 
 dataset = RSSDataset(opt) # we just need the functionality in RSSDataset
@@ -228,5 +228,7 @@ plt.title("Localization error (mean)")
 plt.xlabel("Epoch")
 plt.ylabel("Distance")
 
-plt.plot(test_epoches, d4)
+d4 = np.array(d4)
+test_epoches = list(test_epoches)
+plt.plot(test_epoches, d4[:,0])
 plt.savefig("{}/loc_errs.pdf".format(out_dir))
