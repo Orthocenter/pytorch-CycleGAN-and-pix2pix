@@ -138,9 +138,6 @@ paths = sorted(paths)
 model = create_model(opt)
 
 for epoch in test_epoches:
-    
-    print("Testing model at epoch {}...".format(epoch))
-
     # Prepare to load model at `epoch`
     epoches.append(epoch)
     opt.epoch = "%d" % epoch
