@@ -241,6 +241,13 @@ plt.savefig("{}/rss_errs.pdf".format(out_dir))
 # Export stats
 import json
 
+# Hack to serialize numpy arrays
+class NPEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
 data = {"loc": d4, "rss": sim2}
-with open("{}/raw.json", "w") as f:
-    json.dump(data, f)
+with open("{}/raw.json".format(out_dir), "w") as f:
+    json.dump(data, f, cls=NPEncoder)
