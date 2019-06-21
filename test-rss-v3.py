@@ -113,6 +113,7 @@ def denorm_rss(x):
     return (x + 1) / 2 * (dataset.max_rss - dataset.min_rss) + dataset.min_rss
 ###############################
 
+# Source and target domain gammas
 gamma_a = "2.0"
 gamma_b = "5.0"
 
@@ -128,27 +129,32 @@ sim1 = []
 sim2 = []
 epoches = []
 
+# Collect all source domain images
 paths = glob.glob(dir_a + "/*.pickle")
 paths = sorted(paths)
 
+# Create a model given opt.model and other options
+model = create_model(opt)
+
 for epoch in test_epoches:
-    epoches.append(epoch)
     
+    # Prepare to load model at `epoch`
+    epoches.append(epoch)
     opt.epoch = "%d" % epoch
     opt.load_iter = 0
 
-    model = create_model(opt)      # create a model given opt.model and other options
-    model.setup(opt)               # regular setup: load and print networks; create schedulers
+    # Regular setup for each epoch: load and print networks, create schedulers
+    model.setup(opt) 
 
+    # Ground truth location distance
     dis_gt_loc = []
-    dis_gt_taskrB = []
-    
-    pwr_gt_latent = []
-    pwr_gt_taskrB = []
+    # Ground truth power distance
+    dis_gt_pwr = []
     
     sim_realA = []
     sim_fakeB = []
     
+    # Test every single image in source domain A
     for path_a in paths:
         tmp = path_a.split("/")[-1].split('_')
         x = float(tmp[1])
@@ -159,24 +165,29 @@ for epoch in test_epoches:
         
         pwr = float(tmp[-1].split('.')[0])
 
+        # Load corresponding image in target domain B with same location and power
         test_file = "img_%.2f_%.2f_"  % (x, y) + "%s_" + "%d.pickle" % pwr
         path_b = os.path.join(dir_b, test_file % gamma_b)
         
-        realA, realB, visuals, txloc, txpwr, task_tx_loc = test_single(path_a, path_b)
+        # Compute!
+        realA, realB, visuals, txloc, txpwr, task_txloc = test_single(path_a, path_b)
 
+        # Calculate various statistics
+        ###############################
         fakeB = visuals['fake_B']
-        dis_gt_loc.append(l2(txloc - task_tx_loc[:2]))
-        #dis_gt_taskrB.append(l2(txloc - task_rB[:2]))
-        # not training to compute power for now
-        #pwr_gt_taskA.append(abs(txpwr - task_A[2:]))
-        #pwr_gt_taskB.append(abs(txpwr - task_B[2:]))
-        #pwr_gt_taskrB.append(abs(txpwr - task_rB[2:]))
+
+        # Transmitter location L2 distance
+        dis_gt_loc.append(l2(txloc - task_txloc))
+        # TODO: train power prediction as well
+        # dis_gt_pwr.append(abs(txpwr - task_pwr))
 
         scaled_realA = scale_rss(denorm_rss(realA))
         scaled_fakeB = scale_rss(denorm_rss(fakeB))
         scaled_realB = scale_rss(denorm_rss(realB))
+        # Per-pixel RSS map L1 distances
         sim_realA.append(l1(scaled_realA - scaled_realB) / realA.size)
         sim_fakeB.append(l1(scaled_fakeB - scaled_realB) / realA.size)
+        ###############################
     
     #dis_gt_taskA = np.array(dis_gt_taskA) * 5
     #dis_gt_taskB = np.array(dis_gt_taskB) * 5
