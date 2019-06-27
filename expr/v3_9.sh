@@ -1,6 +1,6 @@
 python train.py \
     --seed=666 \
-    --gpu_ids=3 \
+    --gpu_ids=1 \
     --dataroot=/home/gomezp/rss-data/v3_9 \
     --name=rss_v3_9 \
     --model=rssmap2rssmap \
