@@ -2,7 +2,7 @@ python train.py \
     --seed=666 \
     --gpu_ids=1 \
     --dataroot=/home/gomezp/rss-data/v3_9 \
-    --name=rss_v3_9 \
+    --name=rss_v3_9.b \
     --model=rssmap2rssmap \
     --input_nc=1 \
     --output_nc=1 \
@@ -12,8 +12,8 @@ python train.py \
     --batch_size=64 \
     --gan_mode=square \
     --netG=unet_64 \
-    --display_env=v3_9 \
+    --display_env=v3_9.b \
     --niter=50 \
     --niter_decay=150 \
-    --lr=0.0001 \
+    --lr=0.01 \
     --verbose
