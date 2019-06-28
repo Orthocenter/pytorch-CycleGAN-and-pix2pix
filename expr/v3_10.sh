@@ -16,6 +16,6 @@ python train.py \
     --niter=50 \
     --niter_decay=150 \
     --lr=0.0001 \
-    --lambda_enc=50.0 \
-    --lambda_syn=50.0 \
+    --lambda_enc=5.0 \
+    --lambda_syn=5.0 \
     --verbose
